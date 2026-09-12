@@ -16,3 +16,9 @@ revisiones/
 
 # Material con derechos de autor (no se versiona)
 *.pdf
+
+# Artefactos de empaquetado y cachés de herramientas
+*.egg-info/
+build/
+dist/
+.pytest_cache/

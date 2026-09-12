@@ -1,0 +1,230 @@
+{
+  "titulo": "Caracterización de aguas residuales tratadas en biodigestor anaerobio, humedal artificial y sistemas combinados",
+  "ventana": [2016, 2026],
+  "idiomas": ["es", "en"],
+  "tipos": ["article", "review"],
+
+  "bloques": {
+    "P1_agua_residual": [
+      "agua residual",
+      "aguas residuales",
+      "agua residual doméstica",
+      "aguas residuales municipales",
+      "agua residual rural",
+      "aguas grises",
+      "efluente",
+      "wastewater",
+      "domestic wastewater",
+      "municipal wastewater",
+      "rural wastewater",
+      "sewage",
+      "effluent",
+      "greywater"
+    ],
+    "P2_humedal": [
+      "humedal artificial",
+      "humedales artificiales",
+      "humedal construido",
+      "humedal de flujo subsuperficial",
+      "humedal de flujo vertical",
+      "constructed wetland",
+      "treatment wetland",
+      "subsurface flow wetland",
+      "vertical flow wetland",
+      "free water surface wetland"
+    ],
+    "P3_anaerobio": [
+      "biodigestor",
+      "digestor anaerobio",
+      "digestión anaerobia",
+      "reactor anaerobio",
+      "tanque séptico",
+      "fosa séptica",
+      "biodigester",
+      "anaerobic digester",
+      "anaerobic digestion",
+      "anaerobic reactor",
+      "UASB",
+      "upflow anaerobic sludge blanket",
+      "septic tank",
+      "anaerobic baffled reactor"
+    ],
+    "P4_desempeno": [
+      "remoción",
+      "eficiencia de remoción",
+      "eficiencia de tratamiento",
+      "desempeño",
+      "rendimiento",
+      "removal",
+      "removal efficiency",
+      "treatment efficiency",
+      "treatment performance",
+      "performance evaluation"
+    ],
+    "P5_parametros": [
+      "DQO",
+      "demanda química de oxígeno",
+      "COD",
+      "chemical oxygen demand",
+      "DBO",
+      "DBO5",
+      "demanda bioquímica de oxígeno",
+      "BOD",
+      "BOD5",
+      "biochemical oxygen demand",
+      "SST",
+      "sólidos suspendidos totales",
+      "TSS",
+      "total suspended solids",
+      "nitrógeno total",
+      "total nitrogen",
+      "fósforo total",
+      "total phosphorus",
+      "turbidez",
+      "turbidity",
+      "conductividad eléctrica",
+      "pH"
+    ]
+  },
+
+  "exclusion": [
+    "análisis de ciclo de vida",
+    "evaluación de ciclo de vida",
+    "life cycle assessment",
+    "life cycle analysis",
+    "life cycle inventory",
+    "LCA",
+    "huella de carbono",
+    "carbon footprint",
+    "greenhouse gas footprint",
+    "emisiones de gases de efecto invernadero"
+  ],
+
+  "grupos": {
+    "G_ciclo_vida": [
+      "análisis de ciclo de vida",
+      "evaluación de ciclo de vida",
+      "life cycle assessment",
+      "life cycle analysis",
+      "life cycle inventory",
+      "LCA",
+      "huella de carbono",
+      "carbon footprint",
+      "greenhouse gas footprint"
+    ],
+    "G_sistema_combinado": [
+      "sistema combinado",
+      "sistema híbrido",
+      "tren de tratamiento",
+      "combined system",
+      "hybrid system",
+      "integrated system",
+      "treatment train",
+      "UASB-constructed wetland",
+      "septic tank-constructed wetland"
+    ],
+    "G_microbiologia": [
+      "coliformes",
+      "coliformes fecales",
+      "coliformes totales",
+      "Escherichia coli",
+      "E. coli",
+      "helmintos",
+      "huevos de helminto",
+      "patógenos",
+      "fecal coliform",
+      "total coliform",
+      "helminth eggs",
+      "pathogens"
+    ],
+    "G_escala": [
+      "escala real",
+      "escala piloto",
+      "planta piloto",
+      "full scale",
+      "pilot scale",
+      "pilot plant",
+      "mesocosm"
+    ]
+  },
+
+  "clasificacion": [
+    {
+      "etiqueta": "Humedal artificial solo",
+      "todos": ["P2_humedal", "P4_desempeno"]
+    },
+    {
+      "etiqueta": "Sistema anaerobio solo",
+      "todos": ["P3_anaerobio", "P4_desempeno"]
+    },
+    {
+      "etiqueta": "Sistema combinado anaerobio + humedal",
+      "todos": ["P2_humedal", "P3_anaerobio"]
+    },
+    {
+      "etiqueta": "Caracterización fisicoquímica",
+      "todos": ["P1_agua_residual", "P5_parametros"]
+    },
+    {
+      "etiqueta": "Calidad microbiológica",
+      "todos": ["P1_agua_residual", "G_microbiologia"]
+    },
+    {
+      "etiqueta": "Evidencia a escala real o piloto",
+      "todos": ["P4_desempeno", "G_escala"]
+    }
+  ],
+
+  "consulta": {
+    "eje": "P2_humedal",
+    "cruce": ["anaerobic", "UASB", "septic tank", "biodigester"]
+  },
+
+  "reglas": {
+    "sinResumen": "dudoso",
+    "incluir": [
+      {
+        "todos": ["P2_humedal", "P3_anaerobio"],
+        "ninguno": ["G_ciclo_vida"],
+        "motivo": "Sistema combinado anaerobio más humedal artificial: es el núcleo de la revisión."
+      },
+      {
+        "todos": ["P1_agua_residual", "P4_desempeno"],
+        "alguno_de": [["P2_humedal", "P3_anaerobio"]],
+        "ninguno": ["G_ciclo_vida"],
+        "motivo": "Trata agua residual y reporta desempeño de un humedal artificial o de un sistema anaerobio."
+      },
+      {
+        "todos": ["P1_agua_residual"],
+        "alguno_de": [
+          ["P2_humedal", "P3_anaerobio"],
+          ["P5_parametros", "G_microbiologia"]
+        ],
+        "ninguno": ["G_ciclo_vida"],
+        "motivo": "Caracteriza el agua residual con parámetros fisicoquímicos o microbiológicos en alguno de los sistemas de interés."
+      }
+    ],
+    "dudoso": [
+      {
+        "todos": ["P2_humedal"],
+        "ninguno": ["P1_agua_residual"],
+        "motivo": "Habla de humedales pero no queda claro que trate agua residual; puede ser un humedal natural o de aguas pluviales. Lo decide una persona."
+      },
+      {
+        "alguno_de": [["P2_humedal", "P3_anaerobio"]],
+        "ninguno": ["P4_desempeno", "P5_parametros"],
+        "motivo": "Menciona el sistema pero no reporta desempeño ni parámetros medidos; el resumen puede quedarse corto."
+      },
+      {
+        "todos": ["G_ciclo_vida"],
+        "alguno_de": [["P2_humedal", "P3_anaerobio"]],
+        "motivo": "Roza el análisis de ciclo de vida, que está excluido por tema, pero puede traer datos de caracterización aprovechables. Nunca se descarta en automático (AGENTS.md, regla 4)."
+      },
+      {
+        "todos": ["P3_anaerobio"],
+        "ninguno": ["P1_agua_residual", "P2_humedal"],
+        "motivo": "Sistema anaerobio sin agua residual clara; puede ser digestión de residuos sólidos o producción de biogás."
+      }
+    ]
+  }
+}
