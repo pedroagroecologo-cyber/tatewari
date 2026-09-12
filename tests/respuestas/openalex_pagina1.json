@@ -1,0 +1,90 @@
+{
+  "_nota": "SINTETICO DE PRUEBA. Respuesta de ejemplo de OpenAlex con la forma documentada en https://docs.openalex.org. No es una respuesta real ni literatura real: sirve para probar la normalizacion y la paginacion por cursor sin tocar la red.",
+  "meta": {
+    "count": 3,
+    "db_response_time_ms": 12,
+    "page": null,
+    "per_page": 200,
+    "next_cursor": "IlszLCAxNjA5NDU5MjAwMDAwLCAnaHR0cHM6Ly9vcGVuYWxleC5vcmcvVzkwMDAwMDAwMDEnXSI="
+  },
+  "results": [
+    {
+      "id": "https://openalex.org/W9000000001",
+      "doi": "https://doi.org/10.0000/sintetico.101",
+      "title": "SINTETICO DE PRUEBA — Humedal artificial acoplado a reactor UASB",
+      "display_name": "SINTETICO DE PRUEBA — Humedal artificial acoplado a reactor UASB",
+      "publication_year": 2021,
+      "publication_date": "2021-06-15",
+      "language": "es",
+      "type": "article",
+      "cited_by_count": 11,
+      "abstract_inverted_index": {
+        "El": [0],
+        "humedal": [1, 7],
+        "artificial": [2],
+        "remueve": [3, 8],
+        "DQO": [4],
+        "y": [5],
+        "el": [6],
+        "SST": [9]
+      },
+      "authorships": [
+        {
+          "author_position": "first",
+          "author": {
+            "id": "https://openalex.org/A9000000001",
+            "display_name": "Prueba Uno, A."
+          }
+        },
+        {
+          "author_position": "last",
+          "author": {
+            "id": "https://openalex.org/A9000000002",
+            "display_name": "Prueba Dos, B."
+          }
+        }
+      ],
+      "primary_location": {
+        "source": {
+          "id": "https://openalex.org/S9000000001",
+          "display_name": "Revista Sintética de Ingeniería Ambiental",
+          "type": "journal"
+        },
+        "landing_page_url": "https://ejemplo.invalid/sintetico/101",
+        "pdf_url": null
+      },
+      "best_oa_location": {
+        "is_oa": true,
+        "landing_page_url": "https://ejemplo.invalid/sintetico/101",
+        "pdf_url": "https://ejemplo.invalid/sintetico/101.pdf",
+        "version": "publishedVersion",
+        "license": "cc-by"
+      },
+      "open_access": {
+        "is_oa": true,
+        "oa_status": "gold",
+        "oa_url": "https://ejemplo.invalid/sintetico/101.pdf"
+      }
+    },
+    {
+      "id": "https://openalex.org/W9000000002",
+      "doi": null,
+      "title": "SINTETICO DE PRUEBA — Registro incompleto para probar los NR",
+      "display_name": "SINTETICO DE PRUEBA — Registro incompleto para probar los NR",
+      "publication_year": null,
+      "publication_date": null,
+      "language": null,
+      "type": "article",
+      "cited_by_count": 0,
+      "abstract_inverted_index": null,
+      "authorships": [],
+      "primary_location": null,
+      "best_oa_location": null,
+      "open_access": {
+        "is_oa": false,
+        "oa_status": "closed",
+        "oa_url": null
+      }
+    }
+  ]
+}

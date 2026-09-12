@@ -16,6 +16,9 @@ import sys
 from pathlib import Path
 
 from . import __version__
+from .config import ErrorConfig, cargar_config
+from .cosecha import FUENTES, LOTE_POR_DEFECTO, PAGINAS_POR_DEFECTO, Cosecha, ErrorCosecha
+from .http import ClienteHttp
 from .protocolo import ErrorProtocolo, cargar_protocolo
 
 __all__ = ["main", "construir_parser"]
@@ -24,6 +27,8 @@ __all__ = ["main", "construir_parser"]
 SALIDA_OK = 0
 SALIDA_PROTOCOLO_INVALIDO = 1
 SALIDA_ARCHIVO_NO_ENCONTRADO = 2
+SALIDA_CONFIGURACION = 3
+SALIDA_COSECHA = 4
 
 
 class _FormateadorEspanol(argparse.HelpFormatter):
@@ -108,6 +113,76 @@ def construir_parser() -> argparse.ArgumentParser:
     )
     validar.set_defaults(funcion=_orden_protocolo_validar)
 
+    cosechar = subordenes.add_parser(
+        "cosechar",
+        help="Cosecha registros en las bases bibliográficas.",
+        description=(
+            "Cosecha registros para una revisión. Es reanudable: cada llamada "
+            "procesa un lote de ecuaciones y dice cuántas faltan; volver a "
+            "lanzarla continúa donde se quedó. Con --seco o --fixture no toca "
+            "la red."
+        ),
+        formatter_class=_FormateadorEspanol,
+        add_help=False,
+    )
+    _preparar_parser(cosechar)
+    cosechar.add_argument(
+        "revision",
+        metavar="REVISIÓN",
+        help="Nombre de la revisión; da nombre a la carpeta de salida.",
+    )
+    cosechar.add_argument(
+        "--protocolo",
+        metavar="RUTA",
+        type=Path,
+        required=True,
+        help="Ruta al protocolo de búsqueda en JSON.",
+    )
+    cosechar.add_argument(
+        "--seco",
+        action="store_true",
+        help=(
+            "No toca la red: solo imprime las ecuaciones con su URL literal, "
+            "para pegarlas en el navegador y comprobarlas antes de gastar red."
+        ),
+    )
+    cosechar.add_argument(
+        "--fixture",
+        metavar="RUTA",
+        type=Path,
+        default=None,
+        help=(
+            "No toca la red: sirve un archivo local como respuesta. El lote es "
+            "de una sola ecuación salvo que se indique --max-consultas."
+        ),
+    )
+    cosechar.add_argument(
+        "--max-consultas",
+        metavar="N",
+        type=int,
+        default=None,
+        dest="max_consultas",
+        help=(
+            f"Ecuaciones por lote (por defecto {LOTE_POR_DEFECTO}; con --seco, "
+            f"todas)."
+        ),
+    )
+    cosechar.add_argument(
+        "--max-paginas",
+        metavar="N",
+        type=int,
+        default=PAGINAS_POR_DEFECTO,
+        dest="max_paginas",
+        help=f"Páginas por ecuación (por defecto {PAGINAS_POR_DEFECTO}).",
+    )
+    cosechar.add_argument(
+        "--fuente",
+        choices=sorted(FUENTES),
+        default="openalex",
+        help="Base bibliográfica (por defecto openalex).",
+    )
+    cosechar.set_defaults(funcion=_orden_cosechar)
+
     return parser
 
 
@@ -134,6 +209,86 @@ def _orden_protocolo_validar(args: argparse.Namespace) -> int:
     print(f"Protocolo válido: {args.ruta}")
     print()
     print(protocolo.resumen())
+    return SALIDA_OK
+
+
+def _orden_cosechar(args: argparse.Namespace) -> int:
+    try:
+        protocolo = cargar_protocolo(args.protocolo)
+    except FileNotFoundError as error:
+        print(error, file=sys.stderr)
+        return SALIDA_ARCHIVO_NO_ENCONTRADO
+    except ErrorProtocolo as error:
+        print(error, file=sys.stderr)
+        return SALIDA_PROTOCOLO_INVALIDO
+
+    try:
+        config = cargar_config()
+    except ErrorConfig as error:
+        print(error, file=sys.stderr)
+        return SALIDA_CONFIGURACION
+
+    sin_red = args.seco or args.fixture is not None
+    if not sin_red and not config.tiene_mailto:
+        print(
+            "Falta un correo de contacto en TATEWARI_MAILTO. OpenAlex y Crossref "
+            "lo usan para darte respuestas más rápidas y Unpaywall lo exige. "
+            "Copia .env.example a .env y pon ahí tu correo, o usa --seco para "
+            "ver las ecuaciones sin salir a la red.",
+            file=sys.stderr,
+        )
+        return SALIDA_CONFIGURACION
+
+    cliente = None if sin_red else ClienteHttp()
+
+    try:
+        cosecha = Cosecha(
+            revision=args.revision,
+            protocolo=protocolo,
+            config=config,
+            fuente=args.fuente,
+            cliente=cliente,
+        )
+
+        if args.seco:
+            resumen = cosecha.plan_seco(max_consultas=args.max_consultas)
+            print(resumen.resumen())
+            print()
+            for ecuacion in resumen.ecuaciones:
+                print(f"[{ecuacion.numero:>3}] {ecuacion.texto}")
+                print(f"      {ecuacion.url}")
+            return SALIDA_OK
+
+        # En modo fixture el archivo se sirve una sola vez, así que el lote es
+        # de una ecuación salvo que se pida otra cosa a propósito.
+        max_consultas = args.max_consultas
+        if args.fixture is not None and max_consultas is None:
+            max_consultas = 1
+
+        resumen = cosecha.ejecutar(
+            max_consultas=max_consultas,
+            max_paginas=args.max_paginas,
+            fixture=args.fixture,
+        )
+    except ErrorCosecha as error:
+        print(error, file=sys.stderr)
+        return SALIDA_COSECHA
+    except ErrorConfig as error:
+        print(error, file=sys.stderr)
+        return SALIDA_CONFIGURACION
+
+    print(resumen.resumen())
+    print()
+    print(f"Bitácora  : {cosecha.ruta_bitacora}")
+    print(f"Registros : {cosecha.ruta_registros}")
+    print(f"Estado    : {cosecha.ruta_estado}")
+
+    if resumen.incidencias:
+        print()
+        print("Incidencias (quedan anotadas en la bitácora):", file=sys.stderr)
+        for incidencia in resumen.incidencias:
+            print(f"  - {incidencia}", file=sys.stderr)
+
     return SALIDA_OK
 
 

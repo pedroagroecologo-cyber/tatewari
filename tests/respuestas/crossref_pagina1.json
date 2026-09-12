@@ -1,0 +1,41 @@
+{
+  "_nota": "SINTETICO DE PRUEBA. Respuesta de ejemplo de Crossref con la forma documentada en https://api.crossref.org. No es una respuesta real. El resumen viene en JATS, como en la API de verdad, para probar que se limpian las etiquetas.",
+  "status": "ok",
+  "message-type": "work-list",
+  "message-version": "1.0.0",
+  "message": {
+    "facets": {},
+    "total-results": 2,
+    "next-cursor": null,
+    "items": [
+      {
+        "DOI": "10.0000/SINTETICO.201",
+        "title": [
+          "SINTETICO DE PRUEBA — Tanque séptico y humedal artificial en serie"
+        ],
+        "container-title": ["Anales Sintéticos de Saneamiento"],
+        "type": "journal-article",
+        "language": "es",
+        "is-referenced-by-count": 4,
+        "abstract": "<jats:p>Registro sint&#233;tico de prueba. Se midi&#243; la remoci&#243;n de DQO y SST.</jats:p>",
+        "issued": {
+          "date-parts": [[2020, 5]]
+        },
+        "author": [
+          { "given": "F.", "family": "Duplicado" },
+          { "given": "G.", "family": "Duplicado" }
+        ]
+      },
+      {
+        "DOI": "10.0000/sintetico.202",
+        "title": ["SINTETICO DE PRUEBA — Registro escueto sin resumen ni autores"],
+        "container-title": [],
+        "type": "posted-content",
+        "is-referenced-by-count": 0,
+        "created": {
+          "date-parts": [[2023, 11, 2]]
+        }
+      }
+    ]
+  }
+}

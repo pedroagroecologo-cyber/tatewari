@@ -1,0 +1,24 @@
+{
+  "_nota": "SINTETICO DE PRUEBA. Respuesta de ejemplo de Unpaywall (https://unpaywall.org/products/api) para un DOI con version en acceso abierto. No es una respuesta real.",
+  "doi": "10.0000/sintetico.101",
+  "is_oa": true,
+  "oa_status": "gold",
+  "title": "SINTETICO DE PRUEBA - Humedal artificial acoplado a reactor UASB",
+  "best_oa_location": {
+    "url": "https://ejemplo.invalid/sintetico/101",
+    "url_for_pdf": "https://ejemplo.invalid/sintetico/101.pdf",
+    "host_type": "publisher",
+    "version": "publishedVersion",
+    "license": "cc-by",
+    "repository_institution": null
+  },
+  "oa_locations": [
+    {
+      "url": "https://ejemplo.invalid/sintetico/101",
+      "url_for_pdf": "https://ejemplo.invalid/sintetico/101.pdf",
+      "host_type": "publisher",
+      "version": "publishedVersion",
+      "license": "cc-by"
+    }
+  ]
+}

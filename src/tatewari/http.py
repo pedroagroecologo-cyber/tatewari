@@ -1,0 +1,167 @@
+"""Capa HTTP común: tiempo de espera, reintentos y fallo limpio.
+
+Todas las fuentes pasan por aquí. La política es siempre la misma:
+
+- **429 y 5xx**: se reintenta con espera creciente (1 s, 2 s, 4 s, 8 s…). Si la
+  respuesta trae `Retry-After`, manda ese valor sobre la espera calculada.
+- **4xx que no sea 429**: no se reintenta. Es un error nuestro (una URL mal
+  construida, un DOI que no existe) y repetirlo solo gasta la cuota de un
+  servicio gratuito.
+- **Fallo de red o de espera agotada**: se reintenta como un 5xx.
+
+Un error en una ecuación **no puede tumbar la cosecha entera**: quien llama
+atrapa `ErrorHttp`, lo anota en la bitácora y sigue con la siguiente ecuación.
+Por eso todos los fallos previsibles salen como `ErrorHttp` y no como una
+excepción cualquiera de `requests`.
+
+Las URL se construyen enteras en los módulos de cada fuente y se pasan aquí ya
+formadas. **Nunca** se usa el parámetro `params=` de `requests`: convierte los
+espacios en `+` dentro del valor de un filtro, y OpenAlex no lo interpreta como
+espacio.
+"""
+
+from __future__ import annotations
+
+import time
+from dataclasses import dataclass, field
+from typing import Any, Callable
+
+import requests
+
+from . import __version__
+
+__all__ = [
+    "ClienteHttp",
+    "ErrorHttp",
+    "ErrorHttpCliente",
+    "ErrorHttpServidor",
+    "ErrorRed",
+    "AGENTE_USUARIO",
+]
+
+AGENTE_USUARIO = (
+    f"Tatewari/{__version__} (revisión sistemática local; +https://github.com/tatewari)"
+)
+
+TIEMPO_ESPERA = 30.0
+INTENTOS = 4
+ESPERA_BASE = 1.0
+ESPERA_MAXIMA = 60.0
+
+CODIGOS_REINTENTABLES = frozenset({429, 500, 502, 503, 504})
+
+
+class ErrorHttp(Exception):
+    """Fallo al pedir una URL. Se anota en la bitácora y la cosecha continúa."""
+
+    def __init__(self, mensaje: str, url: str, estado: int | None = None) -> None:
+        self.url = url
+        self.estado = estado
+        super().__init__(mensaje)
+
+
+class ErrorHttpCliente(ErrorHttp):
+    """4xx: el problema está en la petición. No se reintenta."""
+
+
+class ErrorHttpServidor(ErrorHttp):
+    """5xx o 429 que no se recuperó tras agotar los reintentos."""
+
+
+class ErrorRed(ErrorHttp):
+    """No se pudo llegar al servidor: sin conexión, DNS o espera agotada."""
+
+
+@dataclass
+class ClienteHttp:
+    """Cliente HTTP con reintentos.
+
+    `dormir` y `sesion` se inyectan para que las pruebas no esperen de verdad
+    ni salgan a la red (AGENTS.md, regla 6).
+    """
+
+    tiempo_espera: float = TIEMPO_ESPERA
+    intentos: int = INTENTOS
+    espera_base: float = ESPERA_BASE
+    espera_maxima: float = ESPERA_MAXIMA
+    agente_usuario: str = AGENTE_USUARIO
+    dormir: Callable[[float], None] = time.sleep
+    sesion: Any | None = None
+    esperas: list[float] = field(default_factory=list, repr=False)
+
+    def __post_init__(self) -> None:
+        if self.sesion is None:
+            self.sesion = requests.Session()
+        self.sesion.headers.update({"User-Agent": self.agente_usuario})
+
+    def obtener_json(self, url: str) -> dict:
+        """Pide una URL y devuelve el JSON. Lanza `ErrorHttp` si no se puede."""
+        ultimo: ErrorHttp | None = None
+
+        for intento in range(1, self.intentos + 1):
+            try:
+                respuesta = self.sesion.get(url, timeout=self.tiempo_espera)
+            except requests.RequestException as error:
+                ultimo = ErrorRed(
+                    f"No se pudo conectar con {url}: {error}", url=url
+                )
+                if intento == self.intentos:
+                    break
+                self._esperar(intento, None)
+                continue
+
+            estado = respuesta.status_code
+
+            if 200 <= estado < 300:
+                try:
+                    return respuesta.json()
+                except ValueError as error:
+                    raise ErrorHttp(
+                        f"La respuesta de {url} no es JSON válido: {error}",
+                        url=url,
+                        estado=estado,
+                    ) from error
+
+            if estado in CODIGOS_REINTENTABLES:
+                ultimo = ErrorHttpServidor(
+                    f"El servidor respondió {estado} en {url}.", url=url, estado=estado
+                )
+                if intento == self.intentos:
+                    break
+                self._esperar(intento, respuesta)
+                continue
+
+            if 400 <= estado < 500:
+                raise ErrorHttpCliente(
+                    f"Petición rechazada con {estado} en {url}. "
+                    f"Revisa cómo se construyó la URL.",
+                    url=url,
+                    estado=estado,
+                )
+
+            ultimo = ErrorHttpServidor(
+                f"Respuesta inesperada {estado} en {url}.", url=url, estado=estado
+            )
+            if intento == self.intentos:
+                break
+            self._esperar(intento, respuesta)
+
+        assert ultimo is not None  # el bucle siempre deja algo aquí
+        raise ultimo
+
+    def _esperar(self, intento: int, respuesta: Any | None) -> None:
+        """Espera creciente, respetando `Retry-After` si el servidor lo manda."""
+        espera = min(self.espera_base * (2 ** (intento - 1)), self.espera_maxima)
+
+        if respuesta is not None:
+            cabecera = respuesta.headers.get("Retry-After") if respuesta.headers else None
+            if cabecera:
+                try:
+                    espera = min(float(cabecera), self.espera_maxima)
+                except ValueError:
+                    # Retry-After también admite una fecha HTTP; si no es un
+                    # número, nos quedamos con la espera calculada.
+                    pass
+
+        self.esperas.append(espera)
+        self.dormir(espera)

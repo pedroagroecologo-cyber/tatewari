@@ -1,0 +1,59 @@
+{
+  "_nota": "SINTETICO DE PRUEBA. Segunda y ultima pagina: next_cursor viene nulo, que es la senal de parada de la paginacion por cursor.",
+  "meta": {
+    "count": 3,
+    "db_response_time_ms": 9,
+    "page": null,
+    "per_page": 200,
+    "next_cursor": null
+  },
+  "results": [
+    {
+      "id": "https://openalex.org/W9000000003",
+      "doi": "https://doi.org/10.0000/SINTETICO.102",
+      "title": "SINTETICO DE PRUEBA — Septic tank and constructed wetland train",
+      "display_name": "SINTETICO DE PRUEBA — Septic tank and constructed wetland train",
+      "publication_year": 2024,
+      "publication_date": "2024-02-01",
+      "language": "en",
+      "type": "review",
+      "cited_by_count": 7,
+      "abstract_inverted_index": {
+        "Synthetic": [0],
+        "record": [1],
+        "for": [2],
+        "tests": [3]
+      },
+      "authorships": [
+        {
+          "author_position": "first",
+          "author": {
+            "id": "https://openalex.org/A9000000003",
+            "display_name": "Test, D."
+          }
+        }
+      ],
+      "primary_location": {
+        "source": {
+          "id": "https://openalex.org/S9000000002",
+          "display_name": "Synthetic Journal of Water Treatment",
+          "type": "journal"
+        },
+        "landing_page_url": "https://ejemplo.invalid/sintetico/102",
+        "pdf_url": null
+      },
+      "best_oa_location": {
+        "is_oa": true,
+        "landing_page_url": "https://ejemplo.invalid/sintetico/102",
+        "pdf_url": null,
+        "version": "acceptedVersion",
+        "license": null
+      },
+      "open_access": {
+        "is_oa": true,
+        "oa_status": "green",
+        "oa_url": "https://ejemplo.invalid/sintetico/102"
+      }
+    }
+  ]
+}
