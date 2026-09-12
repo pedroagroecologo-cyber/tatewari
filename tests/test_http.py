@@ -162,3 +162,75 @@ def test_se_manda_un_user_agent_identificable():
     cliente = cliente_con([RespuestaFalsa(200)])
 
     assert "Tatewari/" in cliente.sesion.headers["User-Agent"]
+
+
+# ---------------------------------------------------------------------------
+# Cuota
+# ---------------------------------------------------------------------------
+
+
+CABECERAS_OPENALEX = {
+    "x-ratelimit-limit": "1000",
+    "x-ratelimit-remaining": "950",
+    "x-ratelimit-credits-used": "10",
+    "x-ratelimit-reset": "64869",
+}
+
+
+def test_se_lee_la_cuota_de_las_cabeceras():
+    cliente = cliente_con([RespuestaFalsa(200, cabeceras=CABECERAS_OPENALEX)])
+
+    cliente.obtener_json(URL)
+
+    assert cliente.cuota.limite == 1000
+    assert cliente.cuota.restante == 950
+    assert cliente.cuota.coste == 10
+    # 950 creditos a 10 por peticion dan 95 peticiones mas.
+    assert cliente.cuota.peticiones_restantes == 95
+    assert "95 peticiones" in cliente.cuota.resumen()
+
+
+def test_una_fuente_sin_cabeceras_de_cuota_no_estorba():
+    cliente = cliente_con([RespuestaFalsa(200)])
+
+    cliente.obtener_json(URL)
+
+    assert not cliente.cuota.hay_datos
+    assert cliente.cuota.peticiones_restantes is None
+    assert "no informa" in cliente.cuota.resumen()
+
+
+def test_la_cuota_se_actualiza_en_cada_peticion():
+    cliente = cliente_con(
+        [
+            RespuestaFalsa(200, cabeceras={**CABECERAS_OPENALEX, "x-ratelimit-remaining": "950"}),
+            RespuestaFalsa(200, cabeceras={**CABECERAS_OPENALEX, "x-ratelimit-remaining": "940"}),
+        ]
+    )
+
+    cliente.obtener_json(URL)
+    assert cliente.cuota.restante == 950
+    cliente.obtener_json(URL)
+    assert cliente.cuota.restante == 940
+
+
+def test_una_cabecera_de_cuota_ilegible_no_revienta():
+    cliente = cliente_con([RespuestaFalsa(200, cabeceras={"x-ratelimit-remaining": "muchos"})])
+
+    cliente.obtener_json(URL)
+
+    assert cliente.cuota.restante is None
+
+
+def test_la_cuota_tambien_se_lee_de_una_respuesta_de_error():
+    """Un 429 trae cuota, y es justo cuando mas falta hace saberlo."""
+    cliente = cliente_con(
+        [
+            RespuestaFalsa(429, cabeceras={**CABECERAS_OPENALEX, "x-ratelimit-remaining": "0"}),
+            RespuestaFalsa(200, cabeceras=CABECERAS_OPENALEX),
+        ]
+    )
+
+    cliente.obtener_json(URL)
+
+    assert cliente.cuota.restante == 950

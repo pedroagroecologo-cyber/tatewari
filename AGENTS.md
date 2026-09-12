@@ -67,6 +67,13 @@ persona usuaria está en español.
 
 - Toda llamada a `open()` lleva **`encoding="utf-8"` explícito**. Sin él,
   Windows usa la página de códigos local y rompe los acentos.
+  - **Única excepción, y queda escrita aquí:** la bitácora `search_log.csv` se
+    escribe en `utf-8-sig`, es decir UTF-8 **con BOM**. Excel en Windows abre un
+    CSV sin BOM con la página de códigos local y destroza los acentos de la
+    columna de observaciones; el BOM es lo que le dice que el archivo es UTF-8.
+    La bitácora se lee en Excel, así que en este archivo gana Excel. Cualquier
+    otra excepción se discute y se añade aquí **antes** de escribirla en el
+    código.
 - Las rutas se construyen con **`pathlib`**, nunca concatenando cadenas con `/`.
 - No se usan comandos de shell propios de Unix (`ls`, `rm`, `grep`, tuberías de
   `sh`) desde el código.

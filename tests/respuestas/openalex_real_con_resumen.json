@@ -1,0 +1,1597 @@
+{
+  "_nota": "CAPTURA REAL de OpenAlex, 2026-09-12, recortada a las dos primeras obras que SI traen abstract_inverted_index. Existe para probar la reconstruccion del resumen contra un indice invertido real, con palabras repetidas en varias posiciones. Metadatos de articulos reales; no es corpus, solo material de prueba.",
+  "meta": {
+    "count": 2,
+    "db_response_time_ms": 58,
+    "page": null,
+    "per_page": 50,
+    "next_cursor": null,
+    "groups_count": null,
+    "x_query": {
+      "oql": "works where date >= (2016-01-01)\n  and title/abstract has (stemmed \"anaerobic\" and stemmed \"constructed wetland\")\n  and date <= (2026-12-31)\n  and language is (en or es)\n  and type is (article or review)",
+      "oqo": {
+        "get_rows": "works",
+        "filter_rows": [
+          {
+            "column_id": "from_publication_date",
+            "value": "2016-01-01"
+          },
+          {
+            "column_id": "title_and_abstract.search",
+            "value": "\"anaerobic\"",
+            "operator": "has"
+          },
+          {
+            "column_id": "title_and_abstract.search",
+            "value": "\"constructed wetland\"",
+            "operator": "has"
+          },
+          {
+            "column_id": "to_publication_date",
+            "value": "2026-12-31"
+          },
+          {
+            "join": "or",
+            "filters": [
+              {
+                "column_id": "language",
+                "value": "en"
+              },
+              {
+                "column_id": "language",
+                "value": "es"
+              }
+            ]
+          },
+          {
+            "join": "or",
+            "filters": [
+              {
+                "column_id": "type",
+                "value": "article"
+              },
+              {
+                "column_id": "type",
+                "value": "review"
+              }
+            ]
+          }
+        ]
+      },
+      "url": "/works?filter=from_publication_date:2016-01-01,title_and_abstract.search:%22anaerobic%22,title_and_abstract.search:%22constructed wetland%22,to_publication_date:2026-12-31,language:en|es,type:article|review&per_page=50&cursor=%2A"
+    },
+    "cost_usd": 0.001
+  },
+  "results": [
+    {
+      "id": "https://openalex.org/W2767088623",
+      "doi": "https://doi.org/10.1515/jwld-2017-0058",
+      "title": "The use of constructed wetlands for the treatment of industrial wastewater",
+      "display_name": "The use of constructed wetlands for the treatment of industrial wastewater",
+      "publication_year": 2017,
+      "publication_date": "2017-09-26",
+      "language": "en",
+      "type": "article",
+      "cited_by_count": 65,
+      "abstract_inverted_index": {
+        "Abstract": [
+          0
+        ],
+        "Constructed": [
+          1
+        ],
+        "wetlands": [
+          2,
+          112,
+          207,
+          253
+        ],
+        "are": [
+          3,
+          34,
+          65,
+          208
+        ],
+        "characterized": [
+          4
+        ],
+        "by": [
+          5,
+          67
+        ],
+        "specific": [
+          6,
+          20,
+          160
+        ],
+        "conditions": [
+          7,
+          142
+        ],
+        "enabling": [
+          8
+        ],
+        "simultaneous": [
+          9
+        ],
+        "various": [
+          10,
+          119
+        ],
+        "physical": [
+          11
+        ],
+        "and": [
+          12,
+          27,
+          30,
+          41,
+          53,
+          59,
+          70,
+          99,
+          145,
+          152,
+          161,
+          194,
+          199,
+          215,
+          246,
+          260
+        ],
+        "biochemical": [
+          13
+        ],
+        "processes.": [
+          14
+        ],
+        "This": [
+          15
+        ],
+        "is": [
+          16,
+          104
+        ],
+        "the": [
+          17,
+          23,
+          49,
+          57,
+          108,
+          114,
+          133,
+          139,
+          177,
+          211,
+          263
+        ],
+        "result": [
+          18
+        ],
+        "of": [
+          19,
+          25,
+          36,
+          51,
+          61,
+          110,
+          118,
+          121,
+          129,
+          135,
+          143,
+          147,
+          164,
+          171,
+          179,
+          213,
+          226,
+          242,
+          258
+        ],
+        "environment": [
+          21
+        ],
+        "for": [
+          22,
+          56,
+          85,
+          113,
+          132,
+          176,
+          210,
+          224
+        ],
+        "growth": [
+          24
+        ],
+        "microorganisms": [
+          26
+        ],
+        "hydrophytes": [
+          28
+        ],
+        "(aquatic": [
+          29
+        ],
+        "semiaquatic": [
+          31
+        ],
+        "plants)": [
+          32
+        ],
+        "which": [
+          33
+        ],
+        "capable": [
+          35
+        ],
+        "living": [
+          37
+        ],
+        "in": [
+          38,
+          82,
+          107,
+          138,
+          220,
+          230,
+          261
+        ],
+        "aerobic,": [
+          39
+        ],
+        "anaerobic": [
+          40,
+          43
+        ],
+        "facultative": [
+          42
+        ],
+        "conditions.": [
+          44
+        ],
+        "Their": [
+          45
+        ],
+        "interaction": [
+          46
+        ],
+        "contributes": [
+          47
+        ],
+        "to": [
+          48,
+          73,
+          93
+        ],
+        "intensification": [
+          50
+        ],
+        "oxidation": [
+          52
+        ],
+        "reduction": [
+          54
+        ],
+        "responsible": [
+          55
+        ],
+        "removal": [
+          58,
+          101,
+          149
+        ],
+        "retention": [
+          60
+        ],
+        "pollutants.": [
+          62
+        ],
+        "These": [
+          63
+        ],
+        "processes": [
+          64
+        ],
+        "supported": [
+          66
+        ],
+        "sorption,": [
+          68
+        ],
+        "sedimentation": [
+          69
+        ],
+        "assimilation.": [
+          71
+        ],
+        "Thanks": [
+          72
+        ],
+        "these": [
+          74,
+          130
+        ],
+        "advantages,": [
+          75,
+          95
+        ],
+        "treatment": [
+          76,
+          115,
+          134,
+          178,
+          212,
+          233,
+          259
+        ],
+        "wetland": [
+          77
+        ],
+        "systems": [
+          78
+        ],
+        "have": [
+          79
+        ],
+        "been": [
+          80
+        ],
+        "used": [
+          81,
+          209
+        ],
+        "communal": [
+          83
+        ],
+        "management": [
+          84
+        ],
+        "over": [
+          86
+        ],
+        "50": [
+          87
+        ],
+        "years.": [
+          88
+        ],
+        "In": [
+          89,
+          204,
+          249
+        ],
+        "recent": [
+          90
+        ],
+        "years,": [
+          91
+        ],
+        "thanks": [
+          92
+        ],
+        "its": [
+          94
+        ],
+        "low": [
+          96
+        ],
+        "operational": [
+          97
+        ],
+        "costs": [
+          98
+        ],
+        "high": [
+          100
+        ],
+        "efficiency,": [
+          102
+        ],
+        "there": [
+          103
+        ],
+        "growing": [
+          105
+        ],
+        "interest": [
+          106
+        ],
+        "use": [
+          109,
+          128,
+          144,
+          170
+        ],
+        "constructed": [
+          111,
+          206,
+          252
+        ],
+        "or": [
+          116,
+          223
+        ],
+        "pre-treatment": [
+          117
+        ],
+        "types": [
+          120
+        ],
+        "industrial": [
+          122,
+          136,
+          180
+        ],
+        "wastewater.": [
+          123
+        ],
+        "The": [
+          124,
+          141,
+          169
+        ],
+        "study": [
+          125
+        ],
+        "analyzes": [
+          126
+        ],
+        "current": [
+          127
+        ],
+        "facilities": [
+          131
+        ],
+        "wastewater": [
+          137,
+          232,
+          243
+        ],
+        "world.": [
+          140
+        ],
+        "efficiency": [
+          146
+        ],
+        "pollutants": [
+          148,
+          163
+        ],
+        "from": [
+          150,
+          184,
+          217,
+          244
+        ],
+        "readily": [
+          151
+        ],
+        "slowly": [
+          153
+        ],
+        "biodegradable": [
+          154
+        ],
+        "wastewater,": [
+          155,
+          181
+        ],
+        "with": [
+          156,
+          238
+        ],
+        "special": [
+          157
+        ],
+        "emphasis": [
+          158
+        ],
+        "on": [
+          159
+        ],
+        "characteristic": [
+          162
+        ],
+        "particular": [
+          165
+        ],
+        "industries": [
+          166
+        ],
+        "were": [
+          167
+        ],
+        "presented.": [
+          168
+        ],
+        "subsurface": [
+          172
+        ],
+        "horizontal": [
+          173
+        ],
+        "flow": [
+          174
+        ],
+        "beds": [
+          175
+        ],
+        "among": [
+          182
+        ],
+        "others": [
+          183
+        ],
+        "crude": [
+          185
+        ],
+        "oil": [
+          186,
+          197
+        ],
+        "processing,": [
+          187
+        ],
+        "paper": [
+          188
+        ],
+        "production,": [
+          189
+        ],
+        "food": [
+          190
+        ],
+        "industry": [
+          191
+        ],
+        "including": [
+          192
+        ],
+        "wineries": [
+          193
+        ],
+        "distillery,": [
+          195
+        ],
+        "olive": [
+          196
+        ],
+        "production": [
+          198
+        ],
+        "coffee": [
+          200
+        ],
+        "processing": [
+          201,
+          219
+        ],
+        "was": [
+          202
+        ],
+        "described.": [
+          203
+        ],
+        "Poland": [
+          205
+        ],
+        "sewage": [
+          214,
+          227,
+          237
+        ],
+        "sludge": [
+          216,
+          228
+        ],
+        "milk": [
+          218
+        ],
+        "pilot": [
+          221
+        ],
+        "scale": [
+          222
+        ],
+        "dewatering": [
+          225
+        ],
+        "produced": [
+          229
+        ],
+        "municipal": [
+          231
+        ],
+        "plant": [
+          234
+        ],
+        "treating": [
+          235
+        ],
+        "domestic": [
+          236
+        ],
+        "approximately": [
+          239
+        ],
+        "40%": [
+          240
+        ],
+        "share": [
+          241
+        ],
+        "dairy": [
+          245
+        ],
+        "fish": [
+          247
+        ],
+        "industry.": [
+          248
+        ],
+        "all": [
+          250
+        ],
+        "cases,": [
+          251
+        ],
+        "provided": [
+          254
+        ],
+        "an": [
+          255
+        ],
+        "appropriate": [
+          256
+        ],
+        "level": [
+          257
+        ],
+        "addition": [
+          262
+        ],
+        "so-called": [
+          264
+        ],
+        "ecosystem": [
+          265
+        ],
+        "service.": [
+          266
+        ]
+      },
+      "authorships": [
+        {
+          "author_position": "first",
+          "author": {
+            "id": "https://openalex.org/A5109382847",
+            "display_name": "Katarzyna Skrzypiecbcef",
+            "orcid": null
+          },
+          "institutions": [
+            {
+              "id": "https://openalex.org/I169333911",
+              "display_name": "Gdańsk University of Technology",
+              "ror": "https://ror.org/006x4sc24",
+              "country_code": "PL",
+              "type": "education",
+              "lineage": [
+                "https://openalex.org/I169333911"
+              ]
+            }
+          ],
+          "countries": [
+            "PL"
+          ],
+          "is_corresponding": false,
+          "raw_author_name": "Katarzyna Skrzypiecbcef",
+          "raw_affiliation_strings": [
+            "1Gdańsk University of Technology, Faculty of Civil and Environmental Engineering, ul. Narutowicza 11/12, 80-233 Gdańsk, Poland"
+          ],
+          "raw_orcid": null,
+          "affiliations": [
+            {
+              "raw_affiliation_string": "1Gdańsk University of Technology, Faculty of Civil and Environmental Engineering, ul. Narutowicza 11/12, 80-233 Gdańsk, Poland",
+              "institution_ids": [
+                "https://openalex.org/I169333911"
+              ]
+            }
+          ]
+        },
+        {
+          "author_position": "last",
+          "author": {
+            "id": "https://openalex.org/A5083260006",
+            "display_name": "Magdalena H. Gajewskaad",
+            "orcid": null
+          },
+          "institutions": [
+            {
+              "id": "https://openalex.org/I169333911",
+              "display_name": "Gdańsk University of Technology",
+              "ror": "https://ror.org/006x4sc24",
+              "country_code": "PL",
+              "type": "education",
+              "lineage": [
+                "https://openalex.org/I169333911"
+              ]
+            }
+          ],
+          "countries": [
+            "PL"
+          ],
+          "is_corresponding": false,
+          "raw_author_name": "Magdalena H. Gajewskaad",
+          "raw_affiliation_strings": [
+            "1Gdańsk University of Technology, Faculty of Civil and Environmental Engineering, ul. Narutowicza 11/12, 80-233 Gdańsk, Poland"
+          ],
+          "raw_orcid": null,
+          "affiliations": [
+            {
+              "raw_affiliation_string": "1Gdańsk University of Technology, Faculty of Civil and Environmental Engineering, ul. Narutowicza 11/12, 80-233 Gdańsk, Poland",
+              "institution_ids": [
+                "https://openalex.org/I169333911"
+              ]
+            }
+          ]
+        }
+      ],
+      "primary_location": {
+        "id": "doi:10.1515/jwld-2017-0058",
+        "is_oa": true,
+        "landing_page_url": "https://doi.org/10.1515/jwld-2017-0058",
+        "pdf_url": null,
+        "source": {
+          "id": "https://openalex.org/S199350277",
+          "display_name": "Journal of Water and Land Development",
+          "issn_l": "1429-7426",
+          "issn": [
+            "1429-7426",
+            "2083-4535"
+          ],
+          "is_oa": true,
+          "is_in_doaj": true,
+          "is_core": false,
+          "host_organization": "https://openalex.org/P4310320322",
+          "host_organization_name": "De Gruyter Open",
+          "host_organization_lineage": [
+            "https://openalex.org/P4310320322",
+            "https://openalex.org/P4310313990"
+          ],
+          "host_organization_lineage_names": [
+            "De Gruyter Open",
+            "De Gruyter"
+          ],
+          "type": "journal"
+        },
+        "license": "cc-by-nc-nd",
+        "license_id": "https://openalex.org/licenses/cc-by-nc-nd",
+        "version": "publishedVersion",
+        "is_accepted": true,
+        "is_published": true,
+        "raw_source_name": "Journal of Water and Land Development",
+        "raw_type": "journal-article"
+      },
+      "best_oa_location": {
+        "id": "doi:10.1515/jwld-2017-0058",
+        "is_oa": true,
+        "landing_page_url": "https://doi.org/10.1515/jwld-2017-0058",
+        "pdf_url": null,
+        "source": {
+          "id": "https://openalex.org/S199350277",
+          "display_name": "Journal of Water and Land Development",
+          "issn_l": "1429-7426",
+          "issn": [
+            "1429-7426",
+            "2083-4535"
+          ],
+          "is_oa": true,
+          "is_in_doaj": true,
+          "is_core": false,
+          "host_organization": "https://openalex.org/P4310320322",
+          "host_organization_name": "De Gruyter Open",
+          "host_organization_lineage": [
+            "https://openalex.org/P4310320322",
+            "https://openalex.org/P4310313990"
+          ],
+          "host_organization_lineage_names": [
+            "De Gruyter Open",
+            "De Gruyter"
+          ],
+          "type": "journal"
+        },
+        "license": "cc-by-nc-nd",
+        "license_id": "https://openalex.org/licenses/cc-by-nc-nd",
+        "version": "publishedVersion",
+        "is_accepted": true,
+        "is_published": true,
+        "raw_source_name": "Journal of Water and Land Development",
+        "raw_type": "journal-article"
+      },
+      "open_access": {
+        "is_oa": true,
+        "oa_status": "diamond",
+        "oa_url": "https://doi.org/10.1515/jwld-2017-0058",
+        "any_repository_has_fulltext": true
+      }
+    },
+    {
+      "id": "https://openalex.org/W2944455648",
+      "doi": "https://doi.org/10.1002/er.4496",
+      "title": "Recent advances in constructed wetland‐microbial fuel cells for simultaneous bioelectricity production and wastewater treatment: A review",
+      "display_name": "Recent advances in constructed wetland‐microbial fuel cells for simultaneous bioelectricity production and wastewater treatment: A review",
+      "publication_year": 2019,
+      "publication_date": "2019-05-08",
+      "language": "en",
+      "type": "article",
+      "cited_by_count": 121,
+      "abstract_inverted_index": {
+        "The": [
+          0,
+          98
+        ],
+        "coupling": [
+          1
+        ],
+        "of": [
+          2,
+          18,
+          24,
+          75,
+          87,
+          135,
+          144,
+          166,
+          169,
+          178,
+          181,
+          212
+        ],
+        "constructed": [
+          3
+        ],
+        "wetlands": [
+          4
+        ],
+        "(CWs)": [
+          5
+        ],
+        "to": [
+          6,
+          14,
+          159,
+          216
+        ],
+        "microbial": [
+          7,
+          96
+        ],
+        "fuel": [
+          8
+        ],
+        "cells": [
+          9
+        ],
+        "(MFCs)": [
+          10
+        ],
+        "has": [
+          11
+        ],
+        "turned": [
+          12
+        ],
+        "out": [
+          13
+        ],
+        "be": [
+          15
+        ],
+        "a": [
+          16,
+          62,
+          68,
+          95,
+          145,
+          173,
+          204,
+          218
+        ],
+        "source": [
+          17
+        ],
+        "renewable": [
+          19
+        ],
+        "energy": [
+          20,
+          81
+        ],
+        "for": [
+          21,
+          27,
+          120,
+          209
+        ],
+        "the": [
+          22,
+          28,
+          39,
+          47,
+          51,
+          54,
+          73,
+          85,
+          107,
+          133,
+          142,
+          151,
+          164,
+          167,
+          179,
+          210
+        ],
+        "production": [
+          23,
+          111,
+          211
+        ],
+        "bioelectricity": [
+          25,
+          83,
+          108,
+          186
+        ],
+        "and": [
+          26,
+          42,
+          53,
+          94,
+          102,
+          109,
+          153,
+          196
+        ],
+        "simultaneous": [
+          29
+        ],
+        "wastewater": [
+          30,
+          194
+        ],
+        "treatment.": [
+          31
+        ],
+        "Both": [
+          32
+        ],
+        "technologies": [
+          33
+        ],
+        "have": [
+          34,
+          147
+        ],
+        "an": [
+          35,
+          43,
+          76,
+          91
+        ],
+        "aerobic": [
+          36
+        ],
+        "zone": [
+          37,
+          45
+        ],
+        "in": [
+          38,
+          46,
+          72,
+          106,
+          112,
+          130
+        ],
+        "air-water": [
+          40
+        ],
+        "interface": [
+          41
+        ],
+        "anaerobic": [
+          44
+        ],
+        "lower": [
+          48
+        ],
+        "part,": [
+          49
+        ],
+        "where": [
+          50,
+          114,
+          172
+        ],
+        "anode": [
+          52
+        ],
+        "cathode": [
+          55
+        ],
+        "are": [
+          56,
+          117
+        ],
+        "strategically": [
+          57
+        ],
+        "placed.": [
+          58
+        ],
+        "This": [
+          59,
+          156,
+          201
+        ],
+        "hybridization": [
+          60
+        ],
+        "is": [
+          61,
+          199,
+          203
+        ],
+        "promising": [
+          63,
+          205
+        ],
+        "bioelectrochemical": [
+          64
+        ],
+        "technology": [
+          65
+        ],
+        "that": [
+          66,
+          140
+        ],
+        "exerts": [
+          67
+        ],
+        "symbiosis": [
+          69
+        ],
+        "between": [
+          70,
+          100
+        ],
+        "plant-bacteria": [
+          71
+        ],
+        "rhizosphere": [
+          74
+        ],
+        "aquatic": [
+          77
+        ],
+        "plant,": [
+          78
+        ],
+        "converting": [
+          79
+        ],
+        "solar": [
+          80
+        ],
+        "into": [
+          82
+        ],
+        "through": [
+          84
+        ],
+        "formation": [
+          86
+        ],
+        "root": [
+          88
+        ],
+        "exudates": [
+          89
+        ],
+        "as": [
+          90,
+          185
+        ],
+        "endogenous": [
+          92
+        ],
+        "substrate": [
+          93,
+          110
+        ],
+        "activity.": [
+          97
+        ],
+        "difference": [
+          99
+        ],
+        "CW-MFC": [
+          101,
+          124,
+          146,
+          170
+        ],
+        "MFC": [
+          103
+        ],
+        "conventional": [
+          104
+        ],
+        "lies": [
+          105
+        ],
+        "situ,": [
+          113
+        ],
+        "exogenous": [
+          115
+        ],
+        "substrates": [
+          116
+        ],
+        "not": [
+          118,
+          207
+        ],
+        "required": [
+          119
+        ],
+        "example": [
+          121
+        ],
+        "wastewater.": [
+          122
+        ],
+        "However,": [
+          123
+        ],
+        "can": [
+          125
+        ],
+        "take": [
+          126
+        ],
+        "organic": [
+          127
+        ],
+        "content": [
+          128
+        ],
+        "present": [
+          129
+        ],
+        "wastewater,": [
+          131
+        ],
+        "promoting": [
+          132
+        ],
+        "removal": [
+          134
+        ],
+        "some": [
+          136
+        ],
+        "pollutants.": [
+          137
+        ],
+        "Different": [
+          138
+        ],
+        "areas": [
+          139
+        ],
+        "comprise": [
+          141
+        ],
+        "study": [
+          143
+        ],
+        "been": [
+          148
+        ],
+        "explored,": [
+          149
+        ],
+        "including": [
+          150
+        ],
+        "structures": [
+          152
+        ],
+        "their": [
+          154
+        ],
+        "operation.": [
+          155
+        ],
+        "review": [
+          157
+        ],
+        "aims": [
+          158
+        ],
+        "provide": [
+          160
+        ],
+        "concise": [
+          161
+        ],
+        "information": [
+          162
+        ],
+        "on": [
+          163,
+          175
+        ],
+        "state": [
+          165
+        ],
+        "art": [
+          168
+        ],
+        "systems,": [
+          171
+        ],
+        "summary": [
+          174
+        ],
+        "important": [
+          176
+        ],
+        "aspects": [
+          177
+        ],
+        "development": [
+          180
+        ],
+        "this": [
+          182
+        ],
+        "technology,": [
+          183,
+          206
+        ],
+        "such": [
+          184
+        ],
+        "production,": [
+          187
+        ],
+        "configurations,": [
+          188
+        ],
+        "plant": [
+          189
+        ],
+        "species,": [
+          190
+        ],
+        "rhizodeposits,": [
+          191
+        ],
+        "electrode": [
+          192
+        ],
+        "materials,": [
+          193
+        ],
+        "treatment,": [
+          195
+        ],
+        "future": [
+          197
+        ],
+        "perspectives,": [
+          198
+        ],
+        "presented.": [
+          200
+        ],
+        "system": [
+          202
+        ],
+        "only": [
+          208
+        ],
+        "bioenergy": [
+          213
+        ],
+        "but": [
+          214
+        ],
+        "also": [
+          215
+        ],
+        "maintain": [
+          217
+        ],
+        "clean": [
+          219
+        ],
+        "environment,": [
+          220
+        ],
+        "since": [
+          221
+        ],
+        "during": [
+          222
+        ],
+        "its": [
+          223
+        ],
+        "operation,": [
+          224
+        ],
+        "no": [
+          225
+        ],
+        "toxic": [
+          226
+        ],
+        "byproducts": [
+          227
+        ],
+        "were": [
+          228
+        ],
+        "formed.": [
+          229
+        ]
+      },
+      "authorships": [
+        {
+          "author_position": "first",
+          "author": {
+            "id": "https://openalex.org/A5051679754",
+            "display_name": "Oscar Guadarrama‐Pérez",
+            "orcid": "https://orcid.org/0000-0003-4182-6741"
+          },
+          "institutions": [
+            {
+              "id": "https://openalex.org/I4210133739",
+              "display_name": "Instituto Mexicano de Tecnología del Agua",
+              "ror": "https://ror.org/046ka3r30",
+              "country_code": "MX",
+              "type": "other",
+              "lineage": [
+                "https://openalex.org/I4210133739"
+              ]
+            }
+          ],
+          "countries": [
+            "MX"
+          ],
+          "is_corresponding": false,
+          "raw_author_name": "Oscar Guadarrama‐Pérez",
+          "raw_affiliation_strings": [
+            "Subcoordinación de Tratamiento de Aguas ResidualesInstituto Mexicano de Tecnología del Agua Jiutepec Mexico"
+          ],
+          "raw_orcid": null,
+          "affiliations": [
+            {
+              "raw_affiliation_string": "Subcoordinación de Tratamiento de Aguas ResidualesInstituto Mexicano de Tecnología del Agua Jiutepec Mexico",
+              "institution_ids": [
+                "https://openalex.org/I4210133739"
+              ]
+            }
+          ]
+        },
+        {
+          "author_position": "middle",
+          "author": {
+            "id": "https://openalex.org/A5079804252",
+            "display_name": "Tania Gutiérrez‐Macías",
+            "orcid": null
+          },
+          "institutions": [
+            {
+              "id": "https://openalex.org/I4210133739",
+              "display_name": "Instituto Mexicano de Tecnología del Agua",
+              "ror": "https://ror.org/046ka3r30",
+              "country_code": "MX",
+              "type": "other",
+              "lineage": [
+                "https://openalex.org/I4210133739"
+              ]
+            },
+            {
+              "id": "https://openalex.org/I4210163111",
+              "display_name": "Secretaría de Ciencia, Humanidades, Tecnología e Innovación",
+              "ror": "https://ror.org/059ex5q34",
+              "country_code": "MX",
+              "type": "government",
+              "lineage": [
+                "https://openalex.org/I4210163111"
+              ]
+            }
+          ],
+          "countries": [
+            "MX"
+          ],
+          "is_corresponding": false,
+          "raw_author_name": "Tania Gutiérrez‐Macías",
+          "raw_affiliation_strings": [
+            "Consejo Nacional de Ciencia y Tecnología‐Instituto Mexicano de Tecnología del Agua Jiutepec Mexico"
+          ],
+          "raw_orcid": null,
+          "affiliations": [
+            {
+              "raw_affiliation_string": "Consejo Nacional de Ciencia y Tecnología‐Instituto Mexicano de Tecnología del Agua Jiutepec Mexico",
+              "institution_ids": [
+                "https://openalex.org/I4210133739",
+                "https://openalex.org/I4210163111"
+              ]
+            }
+          ]
+        },
+        {
+          "author_position": "middle",
+          "author": {
+            "id": "https://openalex.org/A5015626254",
+            "display_name": "Liliana García‐Sánchez",
+            "orcid": "https://orcid.org/0000-0002-1143-3640"
+          },
+          "institutions": [
+            {
+              "id": "https://openalex.org/I4210133739",
+              "display_name": "Instituto Mexicano de Tecnología del Agua",
+              "ror": "https://ror.org/046ka3r30",
+              "country_code": "MX",
+              "type": "other",
+              "lineage": [
+                "https://openalex.org/I4210133739"
+              ]
+            }
+          ],
+          "countries": [
+            "MX"
+          ],
+          "is_corresponding": false,
+          "raw_author_name": "Liliana García‐Sánchez",
+          "raw_affiliation_strings": [
+            "Subcoordinación de Tratamiento de Aguas ResidualesInstituto Mexicano de Tecnología del Agua Jiutepec Mexico"
+          ],
+          "raw_orcid": null,
+          "affiliations": [
+            {
+              "raw_affiliation_string": "Subcoordinación de Tratamiento de Aguas ResidualesInstituto Mexicano de Tecnología del Agua Jiutepec Mexico",
+              "institution_ids": [
+                "https://openalex.org/I4210133739"
+              ]
+            }
+          ]
+        },
+        {
+          "author_position": "middle",
+          "author": {
+            "id": "https://openalex.org/A5037639674",
+            "display_name": "Víctor Hugo Guadarrama-Pérez",
+            "orcid": null
+          },
+          "institutions": [
+            {
+              "id": "https://openalex.org/I4210133739",
+              "display_name": "Instituto Mexicano de Tecnología del Agua",
+              "ror": "https://ror.org/046ka3r30",
+              "country_code": "MX",
+              "type": "other",
+              "lineage": [
+                "https://openalex.org/I4210133739"
+              ]
+            }
+          ],
+          "countries": [
+            "MX"
+          ],
+          "is_corresponding": false,
+          "raw_author_name": "Victor Hugo Guadarrama‐Pérez",
+          "raw_affiliation_strings": [
+            "Subcoordinación de Tratamiento de Aguas ResidualesInstituto Mexicano de Tecnología del Agua Jiutepec Mexico"
+          ],
+          "raw_orcid": null,
+          "affiliations": [
+            {
+              "raw_affiliation_string": "Subcoordinación de Tratamiento de Aguas ResidualesInstituto Mexicano de Tecnología del Agua Jiutepec Mexico",
+              "institution_ids": [
+                "https://openalex.org/I4210133739"
+              ]
+            }
+          ]
+        },
+        {
+          "author_position": "last",
+          "author": {
+            "id": "https://openalex.org/A5077913376",
+            "display_name": "Edson Baltazar Estrada‐Arriaga",
+            "orcid": "https://orcid.org/0000-0002-8589-3236"
+          },
+          "institutions": [
+            {
+              "id": "https://openalex.org/I4210133739",
+              "display_name": "Instituto Mexicano de Tecnología del Agua",
+              "ror": "https://ror.org/046ka3r30",
+              "country_code": "MX",
+              "type": "other",
+              "lineage": [
+                "https://openalex.org/I4210133739"
+              ]
+            }
+          ],
+          "countries": [
+            "MX"
+          ],
+          "is_corresponding": true,
+          "raw_author_name": "Edson Baltazar Estrada‐Arriaga",
+          "raw_affiliation_strings": [
+            "Subcoordinación de Tratamiento de Aguas ResidualesInstituto Mexicano de Tecnología del Agua Jiutepec Mexico"
+          ],
+          "raw_orcid": "https://orcid.org/0000-0002-8589-3236",
+          "affiliations": [
+            {
+              "raw_affiliation_string": "Subcoordinación de Tratamiento de Aguas ResidualesInstituto Mexicano de Tecnología del Agua Jiutepec Mexico",
+              "institution_ids": [
+                "https://openalex.org/I4210133739"
+              ]
+            }
+          ]
+        }
+      ],
+      "primary_location": {
+        "id": "doi:10.1002/er.4496",
+        "is_oa": false,
+        "landing_page_url": "https://doi.org/10.1002/er.4496",
+        "pdf_url": null,
+        "source": {
+          "id": "https://openalex.org/S32776067",
+          "display_name": "International Journal of Energy Research",
+          "issn_l": "0363-907X",
+          "issn": [
+            "0363-907X",
+            "1099-114X"
+          ],
+          "is_oa": false,
+          "is_in_doaj": true,
+          "is_core": true,
+          "host_organization": "https://openalex.org/P4310320595",
+          "host_organization_name": "Wiley",
+          "host_organization_lineage": [
+            "https://openalex.org/P4310320595"
+          ],
+          "host_organization_lineage_names": [
+            "Wiley"
+          ],
+          "type": "journal"
+        },
+        "license": null,
+        "license_id": null,
+        "version": "publishedVersion",
+        "is_accepted": true,
+        "is_published": true,
+        "raw_source_name": "International Journal of Energy Research",
+        "raw_type": "journal-article"
+      },
+      "best_oa_location": null,
+      "open_access": {
+        "is_oa": false,
+        "oa_status": "closed",
+        "oa_url": null,
+        "any_repository_has_fulltext": false
+      }
+    }
+  ]
+}

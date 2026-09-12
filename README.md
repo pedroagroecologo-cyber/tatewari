@@ -134,7 +134,7 @@ src/tatewari/
 protocolos/humedales.json Protocolo real de ejemplo
 fixtures/demo.json        14 registros sintéticos para las pruebas
 tests/                    pytest, sin red
-tests/respuestas/         Respuestas de ejemplo de las APIs, para las pruebas
+tests/respuestas/         Respuestas de las APIs: documentadas y capturas reales
 ```
 
 ---
@@ -209,12 +209,17 @@ Cada llamada procesa un lote (8 ecuaciones por defecto, `--max-consultas`) y
 dice cuántas faltan. Un error en una ecuación no tumba la cosecha: se anota en
 la bitácora con su mensaje y se sigue con la siguiente.
 
+Las que fallaron vuelven a la cola con `--reintentar`, hasta **3 intentos**.
+Pasados esos, la ecuación se da por perdida y deja de volver: una ecuación rota
+no puede atascar la cosecha en bucle. El contador vive en `estado.json`.
+
 ### Modos sin red
 
 | Modo | Qué hace |
 |---|---|
 | `--seco` | No pide nada. Imprime las ecuaciones con su URL literal para pegarlas en el navegador |
 | `--fixture RUTA` | Sirve un archivo local como respuesta, en vez de la API |
+| `--reintentar` | Vuelve a lanzar las ecuaciones que fallaron |
 
 En modo `--fixture` el archivo se sirve como respuesta de la **primera**
 ecuación del lote; si el lote lleva más, esas quedan en la bitácora con 0
@@ -253,28 +258,82 @@ que viaja así:
 https://api.openalex.org/works?filter=title_and_abstract.search:%22humedal%20artificial%22%20AND%20%22anaerobic%22,from_publication_date:2016-01-01,to_publication_date:2026-12-31,language:es|en,type:article|review&per-page=200&cursor=*&mailto=...
 ```
 
-### Cinco errores que ya costaron tiempo
+### Los errores conocidos, medidos
 
-Cada uno tiene su prueba en `tests/test_urls.py`, para que no vuelvan.
+Medido contra la API el **2026-09-12** con `"constructed wetland" AND
+"anaerobic"` y la ventana 2016-2026. Cada fila tiene su prueba en
+`tests/test_urls.py`.
 
-| Mal | Bien | Por qué |
+**Ninguna de las formas malas devuelve error.** Todas responden 200, que es
+peor: el recuento sale distinto y nadie se entera.
+
+| Forma | Recuento | Qué pasa |
 |---|---|---|
-| `language:languages/en` | `language:es\|en` | La primera es la forma de identificador de entidad y la API devuelve error |
-| `type:types/article` | `type:article\|review` | Lo mismo |
-| Término con coma dentro | Coma eliminada | Dentro de `filter=` la coma separa un filtro del siguiente: partiría la consulta |
-| Espacios como `+` | Espacios como `%20` | Si la cadena de consulta la arma la librería, mete `+` y OpenAlex no lo lee como espacio |
-| `and`, `or` | `AND`, `OR`, `NOT` | En minúsculas se buscan como palabras |
+| sin filtro de idioma | 842 | — |
+| `language:es\|en` ← el nuestro | **788** | es (5) + en (783) |
+| `language:en` | 783 | |
+| `language:languages/en` | **783** | Responde 200, pero se come el español |
+| sin filtro de tipo | 842 | — |
+| `type:article\|review` ← el nuestro | **614** | |
+| `type:types/article` | **608** | Responde 200, pero se come las revisiones |
+| `%20` y `AND` ← el nuestro | 842 | |
+| `+` en vez de `%20` | 842 | Hoy da igual |
+| `and` en minúsculas | 842 | Hoy da igual |
+| **sin comillas** | **892** | Deja de buscar la frase y busca palabras sueltas |
 
-Por el cuarto, la URL se construye **a mano** en `fuentes/openalex.py` y nunca
-se usa el parámetro `params=` de `requests`.
+Conclusión: los dos primeros errores son reales y **silenciosos**, que es la
+peor clase. Los de `+` y minúsculas hoy no se reproducen, pero el código sigue
+usando `%20` y mayúsculas, que es la forma documentada, la que se pega en un
+navegador sin sorpresas y la que se lee en la bitácora.
 
-### El resumen viene del revés
+El que no estaba en la lista y sí cambia el resultado son **las comillas**.
+
+Y que el `AND` es un AND de verdad, también medido:
+
+| Consulta | Recuento |
+|---|---|
+| `"constructed wetland"` | 21 371 |
+| `"constructed wetland" AND "anaerobic"` | 1 469 |
+| `"constructed wetland" AND "zzzzqqqwxyz"` | **0** |
+
+Ese 0 es la prueba: si el `AND` se ignorara, la palabra inventada no filtraría
+nada.
+
+### Cuota: la cosecha no cabe de una vez
+
+OpenAlex cobra por **créditos**, no por peticiones. Medido el mismo día en la
+cola anónima: 1000 créditos por ventana, 10 por petición, unas **100
+peticiones**. Cuarenta ecuaciones con hasta 5 páginas cada una son hasta 200.
+
+Así que `http.py` lee las cabeceras `x-ratelimit-*` y la cosecha **se para
+sola** cuando no le quedan créditos para una ecuación entera: mejor cortar
+limpio que dejar una ecuación a medias diciendo en la bitácora que se buscó
+algo que en realidad no se buscó del todo. Lo hecho queda guardado y se retoma
+cuando la cuota se repone.
+
+Falta por comprobar si la cola educada (con `mailto`) da más.
+
+### El resumen viene del revés, y casi nunca viene
 
 OpenAlex no devuelve el resumen como texto corrido, sino como
 `abstract_inverted_index`: un diccionario de palabra → lista de posiciones. Una
 palabra puede aparecer en **varias** posiciones, así que hay que colocar cada
 aparición en su hueco y unir por posición. Ordenar las palabras por su primera
-aparición da un texto distinto y mal: se pierden todas las repeticiones.
+aparición da un texto distinto y mal: se pierden todas las repeticiones. En una
+obra real de la captura, 34 de 160 palabras aparecían repetidas.
+
+> [!IMPORTANT]
+> **Solo 6 de cada 50 obras traen resumen** (12 %, medido el 2026-09-12 sobre
+> esta ecuación). El resto se normaliza a `"NR"`.
+>
+> Esto no es un fallo, es el material con el que hay que trabajar, y condiciona
+> el cribado: el protocolo `humedales.json` manda los registros sin resumen a
+> `dudoso`, así que hoy el 88 % acabaría en revisión humana, que es tanto como
+> no cribar. Hay que decidir qué hacer antes del encargo de cribado. La cosecha
+> ya informa del porcentaje en cada lote para que el dato esté a la vista.
+
+Crossref tampoco ayuda mucho: de los items reales capturados, ninguno traía
+`abstract`.
 
 ### Cuando no hay versión abierta
 
@@ -321,11 +380,19 @@ El fixture cubre a propósito los casos que rompen las cosas:
 python -m pytest
 ```
 
-138 pruebas, todas **sin red** (AGENTS.md, regla 6). Ninguna toca una API real:
-salen de `protocolos/`, de `fixtures/` y de `tests/respuestas/`, que guarda
-respuestas de ejemplo de OpenAlex, Crossref y Unpaywall con la forma que
-documenta cada servicio. El código de red se prueba con un cliente falso; los
-reintentos, con un reloj falso, así que la suite tarda menos de un segundo.
+162 pruebas, todas **sin red** (AGENTS.md, regla 6). Ninguna toca una API real:
+salen de `protocolos/`, de `fixtures/` y de `tests/respuestas/`. El código de
+red se prueba con un cliente falso; los reintentos, con un reloj falso, así que
+la suite tarda un segundo.
+
+`tests/respuestas/` tiene dos clases de archivo:
+
+- Los `*_pagina*.json` sin `real` en el nombre están **escritos según la
+  documentación** y llevan datos sintéticos.
+- Los `*_real_*.json` son **capturas de verdad** del 2026-09-12. Su trabajo es
+  distinto: no comprueban que el código haga lo que queremos, sino que la forma
+  real de la respuesta siga siendo la que creíamos. Si OpenAlex o Crossref
+  cambian algo, son las que se ponen rojas.
 
 La construcción de URLs se prueba **sin simular nada**: se compara la cadena
 generada contra la forma documentada, carácter a carácter.
@@ -334,34 +401,36 @@ generada contra la forma documentada, carácter a carácter.
 
 ## Pendiente de verificar
 
-**Ninguna prueba ha llamado nunca a una API real**, ni debe hacerlo
-(AGENTS.md, regla 6). Todo lo que sigue está escrito **según la documentación
-oficial de cada servicio y no comprobado contra la API en vivo**. La primera
-cosecha de verdad es el momento de confirmarlo, y de corregir aquí lo que salga
-distinto.
+**Ninguna prueba llama a una API real**, ni debe hacerlo (AGENTS.md, regla 6).
+Lo que sigue se comprobó **a mano**, el 2026-09-12, con peticiones sueltas
+fuera de la suite.
 
-1. **Unpaywall exige el correo.** Se manda como `?email=...`. Falta confirmar
-   el código de error exacto cuando no va, y si admite `User-Agent` como
-   alternativa.
-2. **OpenAlex y Crossref: cola educada.** El correo va en `mailto`. Faltan por
-   confirmar los límites de tasa concretos de cada cola, para ajustar la espera
-   entre reintentos de `http.py`.
-3. **El filtro de búsqueda de OpenAlex.** Se usa
-   `title_and_abstract.search:`. Falta comprobar en vivo si busca la frase
-   entrecomillada como frase exacta y si el `AND` dentro del valor se
-   interpreta como se espera. **Esto es lo más importante de la lista**: si el
-   `AND` no se comportara como un `AND`, las 40 ecuaciones estarían mal y no
-   habría forma de notarlo desde aquí. Por eso existe `--seco`: pega una de
-   esas URL en el navegador antes de lanzar la cosecha entera.
-4. **La forma de las respuestas.** Los archivos de `tests/respuestas/` están
-   escritos según la documentación, no capturados de la API. Cuando llegue la
-   primera respuesta real conviene compararlas y ajustar lo que difiera.
-5. **El vocabulario de tipos.** Crossref dice `journal-article` donde OpenAlex
-   dice `article`. La tabla de traducción de `fuentes/crossref.py` es corta y
-   explícita, y lo que no está en ella se deja tal cual vino. Falta ver qué
-   tipos aparecen de verdad en este dominio.
-6. **El idioma.** No siempre viene, y cuando viene no siempre es fiable. De
-   momento se copia tal cual, o `"NR"`.
+### Comprobado
 
-Cuando algo de esto se compruebe contra la API real, se corrige aquí y se borra
-de esta lista. Mientras tanto, nada de estos puntos debe darse por seguro.
+- ✅ **El `AND` de OpenAlex es un AND.** Ver la tabla de arriba: una palabra
+  inventada deja el recuento en 0.
+- ✅ **Las comillas buscan la frase.** Sin ellas el recuento sube.
+- ✅ **`language:languages/en` y `type:types/article` no fallan, mienten.**
+  Responden 200 y estrechan la búsqueda sin avisar.
+- ✅ **Unpaywall exige el correo.** Sin `?email=` responde **HTTP 422**:
+  `"Email address required in API call"`. Como es un 4xx, `http.py` no lo
+  reintenta, que es lo correcto.
+- ✅ **Las cabeceras de cuota existen.** `x-ratelimit-limit: 1000`,
+  `x-ratelimit-credits-used: 10` por petición en la cola anónima.
+- ✅ **La forma de las respuestas.** `tests/respuestas/openalex_real_*.json` y
+  `crossref_real_pagina1.json` son capturas de verdad, y la normalización pasa
+  contra ellas en `tests/test_respuestas_reales.py`.
+
+### Sigue sin comprobar
+
+1. **La cola educada.** Falta medir si `mailto` sube los 1000 créditos. Se ve
+   en la cabecera `x-ratelimit-limit` de la primera cosecha con correo puesto.
+2. **El vocabulario de tipos.** La tabla de `fuentes/crossref.py` cubre lo que
+   apareció en la captura. Lo que no esté se deja tal cual vino, nunca se
+   adivina, pero falta ver qué tipos salen de verdad en este dominio.
+3. **El idioma.** No siempre viene y no siempre es fiable. Se copia tal cual, o
+   `"NR"`. Falta medir cuánto llega vacío.
+4. **Qué hacer con el 88 % sin resumen.** Es la decisión pendiente más
+   importante, y hay que tomarla antes del encargo de cribado.
+
+Cuando algo de esto se compruebe, se corrige aquí y se borra de la lista.

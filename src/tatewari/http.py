@@ -32,6 +32,7 @@ from . import __version__
 
 __all__ = [
     "ClienteHttp",
+    "Cuota",
     "ErrorHttp",
     "ErrorHttpCliente",
     "ErrorHttpServidor",
@@ -72,6 +73,72 @@ class ErrorRed(ErrorHttp):
     """No se pudo llegar al servidor: sin conexión, DNS o espera agotada."""
 
 
+@dataclass(frozen=True)
+class Cuota:
+    """Lo que queda de cuota, leído de las cabeceras ``x-ratelimit-*``.
+
+    OpenAlex las manda en cada respuesta y cobra por **créditos**, no por
+    peticiones: medido el 2026-09-12, la cola anónima da 1000 créditos y cada
+    petición gasta 10, o sea unas 100 peticiones por ventana. Una cosecha de 40
+    ecuaciones con varias páginas cada una se come eso sin despeinarse, así que
+    conviene mirarlo antes de seguir.
+
+    Todos los campos pueden ser `None`: no todas las fuentes mandan cabeceras
+    de cuota, y las que las mandan no siempre las mandan todas.
+    """
+
+    limite: int | None = None
+    restante: int | None = None
+    coste: int | None = None
+    reinicio: int | None = None
+
+    @property
+    def hay_datos(self) -> bool:
+        return self.restante is not None
+
+    @property
+    def peticiones_restantes(self) -> int | None:
+        """Cuántas peticiones más caben, si se sabe el coste de cada una."""
+        if self.restante is None:
+            return None
+        if not self.coste:
+            return None
+        return self.restante // self.coste
+
+    def resumen(self) -> str:
+        if not self.hay_datos:
+            return "La fuente no informa de cuota."
+        peticiones = self.peticiones_restantes
+        texto = f"Cuota: quedan {self.restante}"
+        if self.limite is not None:
+            texto += f" de {self.limite}"
+        if peticiones is not None:
+            texto += f" (unas {peticiones} peticiones)"
+        return texto + "."
+
+
+def _entero_de_cabecera(cabeceras: Any, nombre: str) -> int | None:
+    if not cabeceras:
+        return None
+    valor = cabeceras.get(nombre)
+    if valor is None:
+        return None
+    try:
+        return int(str(valor).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def leer_cuota(cabeceras: Any) -> Cuota:
+    """Extrae la cuota de las cabeceras de una respuesta."""
+    return Cuota(
+        limite=_entero_de_cabecera(cabeceras, "x-ratelimit-limit"),
+        restante=_entero_de_cabecera(cabeceras, "x-ratelimit-remaining"),
+        coste=_entero_de_cabecera(cabeceras, "x-ratelimit-credits-used"),
+        reinicio=_entero_de_cabecera(cabeceras, "x-ratelimit-reset"),
+    )
+
+
 @dataclass
 class ClienteHttp:
     """Cliente HTTP con reintentos.
@@ -88,6 +155,7 @@ class ClienteHttp:
     dormir: Callable[[float], None] = time.sleep
     sesion: Any | None = None
     esperas: list[float] = field(default_factory=list, repr=False)
+    cuota: Cuota = field(default_factory=Cuota, repr=False)
 
     def __post_init__(self) -> None:
         if self.sesion is None:
@@ -111,6 +179,7 @@ class ClienteHttp:
                 continue
 
             estado = respuesta.status_code
+            self.cuota = leer_cuota(getattr(respuesta, "headers", None))
 
             if 200 <= estado < 300:
                 try:

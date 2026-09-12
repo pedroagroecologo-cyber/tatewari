@@ -16,23 +16,41 @@ con la forma
 Cada término va entre comillas para que OpenAlex lo busque como frase y no como
 palabras sueltas.
 
-Errores que ya costaron tiempo y que este módulo evita
------------------------------------------------------
+Errores conocidos que este módulo evita
+--------------------------------------
 
-1. **Idioma.** Es ``language:es|en``, con códigos ISO. **No** es
-   ``language:languages/en``: esa es la forma de identificador de entidad y la
-   API devuelve error.
-2. **Tipo.** Es ``type:article|review``. **No** es ``type:types/article``.
+Todos se midieron contra la API el **2026-09-12**, con la ecuación
+``"constructed wetland" AND "anaerobic"`` y la ventana 2016-2026. Los números
+están en el README.
+
+**Ninguna de las formas malas devuelve hoy un error HTTP.** Todas responden
+200, que es peor: el recuento sale distinto y nadie se entera. Por eso cada
+una tiene su prueba en ``tests/test_urls.py``.
+
+1. **Idioma.** Es ``language:es|en``, con códigos ISO. ``language:languages/en``
+   responde 200, pero da exactamente el mismo recuento que ``language:en``:
+   es decir, se come el español sin avisar (788 → 783).
+2. **Tipo.** Es ``type:article|review``. ``type:types/article`` responde 200 y
+   da lo mismo que ``type:article``: se come las revisiones (614 → 608).
 3. **Comas.** Dentro de ``filter=`` la coma separa un filtro del siguiente, así
-   que ningún término puede llevar una coma dentro. Se limpian antes de armar
-   la consulta (ver `limpiar_termino`).
+   que ningún término puede llevar una coma dentro. Tampoco falla: devuelve 200
+   con otro recuento. Se limpian antes de armar la consulta (ver
+   `limpiar_termino`).
 4. **Codificación.** El valor del filtro se codifica con *percent-encoding*
-   explícito: los espacios tienen que quedar como ``%20``. Si se deja que la
-   librería arme la cadena de consulta, los convierte en ``+`` y OpenAlex no
-   los interpreta como espacio. Por eso aquí se construye la URL entera a mano
-   y nunca se usa ``params=``.
-5. **Booleanos en mayúsculas.** ``AND``, ``OR``, ``NOT``. En minúsculas se
-   buscan como palabras.
+   explícito, con los espacios como ``%20``. Hoy OpenAlex también acepta ``+``
+   como espacio y da el mismo recuento, pero la URL se sigue construyendo a
+   mano y sin ``params=``: ``%20`` es lo que dice la documentación, es lo que
+   se puede pegar en un navegador sin sorpresas, y depender de que el servidor
+   siga decodificando ``+`` es depender de algo que no nos han prometido.
+5. **Booleanos en mayúsculas.** ``AND``, ``OR``, ``NOT``. Hoy ``and`` en
+   minúsculas da el mismo recuento, pero las mayúsculas son la forma
+   documentada y la que se lee en la bitácora.
+
+Y uno que sí cambia el resultado y no estaba en la lista:
+
+6. **Las comillas importan.** Sin ellas el recuento sube (842 → 892): deja de
+   buscarse la frase y se buscan las palabras sueltas. Por eso cada término va
+   entrecomillado.
 
 Resumen
 -------

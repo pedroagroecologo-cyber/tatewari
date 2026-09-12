@@ -50,15 +50,28 @@ __all__ = [
     "FUENTES",
     "COLUMNAS_BITACORA",
     "LOTE_POR_DEFECTO",
+    "INTENTOS_MAXIMOS",
+    "CODIFICACION_BITACORA",
     "ErrorCosecha",
 ]
 
 LOTE_POR_DEFECTO = 8
 PAGINAS_POR_DEFECTO = 5
 
+#: Intentos antes de dar una ecuación por perdida. Una ecuación rota no puede
+#: atascar la cosecha en bucle.
+INTENTOS_MAXIMOS = 3
+
 NOMBRE_ESTADO = "estado.json"
 NOMBRE_BITACORA = "search_log.csv"
 NOMBRE_REGISTROS = "registros.json"
+
+#: La bitácora se escribe en UTF-8 **con BOM**. Es la única excepción al
+#: encoding="utf-8" de la regla 8 de AGENTS.md, y está documentada allí: Excel
+#: en Windows abre un CSV sin BOM con la página de códigos local y destroza los
+#: acentos de la columna de observaciones. El BOM es lo que le dice a Excel que
+#: el archivo es UTF-8. El resto de archivos del proyecto siguen en UTF-8 puro.
+CODIFICACION_BITACORA = "utf-8-sig"
 
 COLUMNAS_BITACORA = (
     "N",
@@ -103,9 +116,13 @@ class ResumenLote:
     total: int
     procesadas: int = 0
     registros_nuevos: int = 0
+    sin_resumen: int = 0
     con_error: int = 0
+    perdidas: int = 0
     pendientes: int = 0
     seco: bool = False
+    detenido_por_cuota: bool = False
+    cuota: str = ""
     ecuaciones: list[Ecuacion] = field(default_factory=list)
     incidencias: list[str] = field(default_factory=list)
 
@@ -128,19 +145,44 @@ class ResumenLote:
             f"Ecuaciones procesadas en este lote : {self.procesadas}",
             f"Registros cosechados en este lote  : {self.registros_nuevos}",
         ]
+        if self.registros_nuevos:
+            porcentaje = 100 * self.sin_resumen / self.registros_nuevos
+            lineas.append(
+                f"  de ellos, sin resumen            : {self.sin_resumen} "
+                f"({porcentaje:.0f} %)"
+            )
         if self.con_error:
             lineas.append(f"Ecuaciones con error               : {self.con_error}")
+        if self.perdidas:
+            lineas.append(
+                f"Ecuaciones dadas por perdidas      : {self.perdidas} "
+                f"(agotaron los {INTENTOS_MAXIMOS} intentos)"
+            )
         lineas.append(
             f"Pendientes                         : {self.pendientes} de {self.total}"
         )
-        if self.pendientes:
+        if self.cuota:
             lineas.append("")
+            lineas.append(self.cuota)
+
+        lineas.append("")
+        if self.detenido_por_cuota:
+            lineas.append(
+                "Lote interrumpido: queda poca cuota en la fuente. Lo hecho está "
+                "guardado; vuelve a lanzar la orden cuando la cuota se reponga."
+            )
+        elif self.pendientes:
             lineas.append(
                 "Vuelve a lanzar la misma orden para continuar donde se quedó."
             )
         else:
-            lineas.append("")
             lineas.append("Cosecha completa.")
+
+        if self.con_error:
+            lineas.append(
+                "Las ecuaciones con error quedan anotadas en la bitácora. Para "
+                "reintentarlas, lanza la orden con --reintentar."
+            )
         return "\n".join(lineas)
 
 
@@ -256,15 +298,23 @@ class Cosecha:
         max_consultas: int | None = None,
         max_paginas: int = PAGINAS_POR_DEFECTO,
         fixture: Path | None = None,
+        reintentar: bool = False,
     ) -> ResumenLote:
-        """Procesa un lote de ecuaciones pendientes y guarda el rastro."""
+        """Procesa un lote de ecuaciones pendientes y guarda el rastro.
+
+        Con `reintentar`, las ecuaciones que fallaron vuelven a la cola, salvo
+        las que ya agotaron `INTENTOS_MAXIMOS`: una ecuación rota no puede
+        atascar la cosecha en bucle.
+        """
         todas = self.ecuaciones()
         estado = self.cargar_estado()
         estado["total_ecuaciones"] = len(todas)
         estado["fuente"] = self.nombre_fuente
 
         hechas = estado["hechas"]
-        pendientes = [e for e in todas if str(e.numero) not in hechas]
+        pendientes = [
+            e for e in todas if _toca_procesar(hechas.get(str(e.numero)), reintentar)
+        ]
 
         tope = LOTE_POR_DEFECTO if max_consultas is None else max(0, max_consultas)
         lote = pendientes[:tope]
@@ -332,15 +382,29 @@ class Cosecha:
 
             nuevos.extend(registros)
             resumen.procesadas += 1
+            resumen.sin_resumen += sum(1 for r in registros if r.get("resumen") == NR)
+
+            previo = hechas.get(str(ecuacion.numero)) or {}
+            intentos = int(previo.get("intentos", 0)) + 1
+            if resultados == NR and intentos >= INTENTOS_MAXIMOS:
+                resumen.perdidas += 1
+                observaciones += (
+                    f" Agotados los {INTENTOS_MAXIMOS} intentos: se da por perdida."
+                )
 
             hechas[str(ecuacion.numero)] = {
                 "ecuacion": ecuacion.texto,
                 "url": url,
                 "base": ecuacion.base,
                 "fecha": fecha,
+                "intentos": intentos,
                 "resultados": resultados,
                 "observaciones": observaciones or NR,
             }
+
+            if self._quedarse_sin_cuota(max_paginas):
+                resumen.detenido_por_cuota = True
+                break
 
             self.anotar_en_bitacora(
                 numero=ecuacion.numero,
@@ -357,8 +421,27 @@ class Cosecha:
         resumen.registros_nuevos = len(nuevos)
 
         self.guardar_estado(estado)
-        resumen.pendientes = len(todas) - len(hechas)
+        resumen.pendientes = sum(
+            1 for e in todas if _toca_procesar(hechas.get(str(e.numero)), reintentar)
+        )
+        if self._cliente is not None and getattr(self._cliente, "cuota", None):
+            resumen.cuota = self._cliente.cuota.resumen()
         return resumen
+
+    def _quedarse_sin_cuota(self, max_paginas: int) -> bool:
+        """¿Queda cuota para otra ecuación entera?
+
+        Se para **antes** de agotarla, no después: una ecuación a medias deja
+        la bitácora diciendo que se buscó algo que en realidad no se buscó
+        entero.
+        """
+        cuota = getattr(self._cliente, "cuota", None)
+        if cuota is None or not cuota.hay_datos:
+            return False
+        peticiones = cuota.peticiones_restantes
+        if peticiones is None:
+            return False
+        return peticiones < max_paginas
 
     def _exigir_cliente(self) -> Any:
         if self._cliente is None:
@@ -399,7 +482,9 @@ class Cosecha:
 
         # newline="" es obligatorio en Windows: sin él, el módulo csv escribe
         # \r\r\n y el archivo sale con una línea en blanco entre filas.
-        with open(self.ruta_bitacora, "a", encoding="utf-8", newline="") as manejador:
+        with open(
+            self.ruta_bitacora, "a", encoding=CODIFICACION_BITACORA, newline=""
+        ) as manejador:
             escritor = csv.DictWriter(manejador, fieldnames=list(COLUMNAS_BITACORA))
             if nuevo:
                 escritor.writeheader()
@@ -429,7 +514,9 @@ class Cosecha:
         """Lee `search_log.csv`. Sobre todo para las pruebas y para informes."""
         if not self.ruta_bitacora.is_file():
             return []
-        with open(self.ruta_bitacora, encoding="utf-8", newline="") as manejador:
+        with open(
+            self.ruta_bitacora, encoding=CODIFICACION_BITACORA, newline=""
+        ) as manejador:
             return list(csv.DictReader(manejador))
 
 
@@ -469,6 +556,23 @@ def _completar_registro(registro: Any) -> dict[str, Any]:
             if campo in registro and registro[campo] not in (None, ""):
                 completo[campo] = registro[campo]
     return completo
+
+
+def _fallo(entrada: Any) -> bool:
+    """¿Esta entrada de `estado.json` es una ecuación que falló?"""
+    return isinstance(entrada, dict) and entrada.get("resultados") == NR
+
+
+def _toca_procesar(entrada: Any, reintentar: bool) -> bool:
+    """¿Hay que lanzar esta ecuación en este lote?
+
+    Nunca procesada, o falló y se pidió reintentar y aún le quedan intentos.
+    """
+    if entrada is None:
+        return True
+    if not reintentar or not _fallo(entrada):
+        return False
+    return int(entrada.get("intentos", 1)) < INTENTOS_MAXIMOS
 
 
 def _ahora() -> str:

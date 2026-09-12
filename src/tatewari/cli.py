@@ -176,6 +176,14 @@ def construir_parser() -> argparse.ArgumentParser:
         help=f"Páginas por ecuación (por defecto {PAGINAS_POR_DEFECTO}).",
     )
     cosechar.add_argument(
+        "--reintentar",
+        action="store_true",
+        help=(
+            "Vuelve a lanzar las ecuaciones que fallaron, salvo las que ya "
+            "agotaron sus intentos."
+        ),
+    )
+    cosechar.add_argument(
         "--fuente",
         choices=sorted(FUENTES),
         default="openalex",
@@ -269,6 +277,7 @@ def _orden_cosechar(args: argparse.Namespace) -> int:
             max_consultas=max_consultas,
             max_paginas=args.max_paginas,
             fixture=args.fixture,
+            reintentar=args.reintentar,
         )
     except ErrorCosecha as error:
         print(error, file=sys.stderr)

@@ -1,0 +1,699 @@
+{
+  "_nota": "CAPTURA REAL de la API de OpenAlex, tomada el 2026-09-12 con el filtro select= limitado a los campos que consume Tatewari, para que el archivo no pese de mas. Es literatura real: los metadatos son de articulos que existen. No es un fixture sintetico y no se usa como corpus, solo para comprobar que la normalizacion entiende la forma real de la respuesta.",
+  "meta": {
+    "count": 599,
+    "db_response_time_ms": 139,
+    "page": null,
+    "per_page": 3,
+    "next_cursor": "IlsyMzguNDExNywgMTYwNDYyMDgwMDAwMCwgJ2h0dHBzOi8vb3BlbmFsZXgub3JnL1czMDk0NzQyMjg1J10i",
+    "groups_count": null,
+    "x_query": {
+      "oql": "works where date >= (2016-01-01)\n  and title/abstract has (stemmed \"anaerobic\" and stemmed \"constructed wetland\")\n  and date <= (2026-12-31)\n  and language is (en or es)\n  and type is (article or review)",
+      "oqo": {
+        "get_rows": "works",
+        "filter_rows": [
+          {
+            "column_id": "from_publication_date",
+            "value": "2016-01-01"
+          },
+          {
+            "column_id": "title_and_abstract.search",
+            "value": "\"anaerobic\"",
+            "operator": "has"
+          },
+          {
+            "column_id": "title_and_abstract.search",
+            "value": "\"constructed wetland\"",
+            "operator": "has"
+          },
+          {
+            "column_id": "to_publication_date",
+            "value": "2026-12-31"
+          },
+          {
+            "join": "or",
+            "filters": [
+              {
+                "column_id": "language",
+                "value": "en"
+              },
+              {
+                "column_id": "language",
+                "value": "es"
+              }
+            ]
+          },
+          {
+            "join": "or",
+            "filters": [
+              {
+                "column_id": "type",
+                "value": "article"
+              },
+              {
+                "column_id": "type",
+                "value": "review"
+              }
+            ]
+          }
+        ]
+      },
+      "url": "/works?filter=from_publication_date:2016-01-01,title_and_abstract.search:%22anaerobic%22,title_and_abstract.search:%22constructed wetland%22,to_publication_date:2026-12-31,language:en|es,type:article|review&per_page=3&cursor=IlsyNjEuMDU2OTIsIDE1MzQ0NjQwMDAwMDAsICdodHRwczovL29wZW5hbGV4Lm9yZy9XMjg4NzE0NjkyMSddIg%3D%3D"
+    },
+    "cost_usd": 0.001
+  },
+  "results": [
+    {
+      "id": "https://openalex.org/W2887146921",
+      "doi": "https://doi.org/10.1016/j.scitotenv.2018.08.189",
+      "title": "Anaerobic ammonium oxidation coupled to iron reduction in constructed wetland mesocosms",
+      "display_name": "Anaerobic ammonium oxidation coupled to iron reduction in constructed wetland mesocosms",
+      "publication_year": 2018,
+      "publication_date": "2018-08-17",
+      "language": "en",
+      "type": "article",
+      "cited_by_count": 97,
+      "abstract_inverted_index": null,
+      "authorships": [
+        {
+          "author_position": "first",
+          "author": {
+            "id": "https://openalex.org/A5033805584",
+            "display_name": "Weitao Shuai",
+            "orcid": "https://orcid.org/0000-0002-0312-6077"
+          },
+          "institutions": [
+            {
+              "id": "https://openalex.org/I20089843",
+              "display_name": "Princeton University",
+              "ror": "https://ror.org/00hx57361",
+              "country_code": "US",
+              "type": "education",
+              "lineage": [
+                "https://openalex.org/I20089843"
+              ]
+            }
+          ],
+          "countries": [
+            "US"
+          ],
+          "is_corresponding": false,
+          "raw_author_name": "Weitao Shuai",
+          "raw_affiliation_strings": [
+            "Department of Civil and Environmental Engineering, Princeton University, NJ 08540, USA. Electronic address: wshuai@exchange.princeton.edu",
+            "Department of Civil and Environmental Engineering, Princeton University, NJ 08540, USA"
+          ],
+          "raw_orcid": null,
+          "affiliations": [
+            {
+              "raw_affiliation_string": "Department of Civil and Environmental Engineering, Princeton University, NJ 08540, USA. Electronic address: wshuai@exchange.princeton.edu",
+              "institution_ids": [
+                "https://openalex.org/I20089843"
+              ]
+            },
+            {
+              "raw_affiliation_string": "Department of Civil and Environmental Engineering, Princeton University, NJ 08540, USA",
+              "institution_ids": [
+                "https://openalex.org/I20089843"
+              ]
+            }
+          ]
+        },
+        {
+          "author_position": "last",
+          "author": {
+            "id": "https://openalex.org/A5088276581",
+            "display_name": "Peter R. Jaffé",
+            "orcid": "https://orcid.org/0000-0002-8531-8549"
+          },
+          "institutions": [
+            {
+              "id": "https://openalex.org/I20089843",
+              "display_name": "Princeton University",
+              "ror": "https://ror.org/00hx57361",
+              "country_code": "US",
+              "type": "education",
+              "lineage": [
+                "https://openalex.org/I20089843"
+              ]
+            }
+          ],
+          "countries": [
+            "US"
+          ],
+          "is_corresponding": true,
+          "raw_author_name": "Peter R. Jaffé",
+          "raw_affiliation_strings": [
+            "Department of Civil and Environmental Engineering, Princeton University, NJ 08540, USA. Electronic address: jaffe@princeton.edu",
+            "Department of Civil and Environmental Engineering, Princeton University, NJ 08540, USA"
+          ],
+          "raw_orcid": "https://orcid.org/0000-0002-8531-8549",
+          "affiliations": [
+            {
+              "raw_affiliation_string": "Department of Civil and Environmental Engineering, Princeton University, NJ 08540, USA. Electronic address: jaffe@princeton.edu",
+              "institution_ids": [
+                "https://openalex.org/I20089843"
+              ]
+            },
+            {
+              "raw_affiliation_string": "Department of Civil and Environmental Engineering, Princeton University, NJ 08540, USA",
+              "institution_ids": [
+                "https://openalex.org/I20089843"
+              ]
+            }
+          ]
+        }
+      ],
+      "primary_location": {
+        "id": "doi:10.1016/j.scitotenv.2018.08.189",
+        "is_oa": false,
+        "landing_page_url": "https://doi.org/10.1016/j.scitotenv.2018.08.189",
+        "pdf_url": null,
+        "source": {
+          "id": "https://openalex.org/S86852077",
+          "display_name": "The Science of The Total Environment",
+          "issn_l": "0048-9697",
+          "issn": [
+            "0048-9697",
+            "1879-1026"
+          ],
+          "is_oa": false,
+          "is_in_doaj": false,
+          "is_core": true,
+          "host_organization": "https://openalex.org/P4310320990",
+          "host_organization_name": "Elsevier BV",
+          "host_organization_lineage": [
+            "https://openalex.org/P4310320990"
+          ],
+          "host_organization_lineage_names": [
+            "Elsevier BV"
+          ],
+          "type": "journal"
+        },
+        "license": null,
+        "license_id": null,
+        "version": "publishedVersion",
+        "is_accepted": true,
+        "is_published": true,
+        "raw_source_name": "Science of The Total Environment",
+        "raw_type": "journal-article"
+      },
+      "best_oa_location": null,
+      "open_access": {
+        "is_oa": false,
+        "oa_status": "closed",
+        "oa_url": null,
+        "any_repository_has_fulltext": false
+      }
+    },
+    {
+      "id": "https://openalex.org/W2956174172",
+      "doi": "https://doi.org/10.1016/j.cej.2019.122273",
+      "title": "Can biochar application improve nitrogen removal in constructed wetlands for treating anaerobically-digested swine wastewater?",
+      "display_name": "Can biochar application improve nitrogen removal in constructed wetlands for treating anaerobically-digested swine wastewater?",
+      "publication_year": 2019,
+      "publication_date": "2019-07-17",
+      "language": "en",
+      "type": "article",
+      "cited_by_count": 135,
+      "abstract_inverted_index": null,
+      "authorships": [
+        {
+          "author_position": "first",
+          "author": {
+            "id": "https://openalex.org/A5100949224",
+            "display_name": "Likui Feng",
+            "orcid": null
+          },
+          "institutions": [
+            {
+              "id": "https://openalex.org/I89652312",
+              "display_name": "Northwest A&F University",
+              "ror": "https://ror.org/0051rme32",
+              "country_code": "CN",
+              "type": "education",
+              "lineage": [
+                "https://openalex.org/I89652312"
+              ]
+            }
+          ],
+          "countries": [
+            "CN"
+          ],
+          "is_corresponding": false,
+          "raw_author_name": "Likui Feng",
+          "raw_affiliation_strings": [
+            "College of Natural Resources and Environment, Northwest A&F University, Yangling, Shaanxi 712100, PR China"
+          ],
+          "raw_orcid": null,
+          "affiliations": [
+            {
+              "raw_affiliation_string": "College of Natural Resources and Environment, Northwest A&F University, Yangling, Shaanxi 712100, PR China",
+              "institution_ids": [
+                "https://openalex.org/I89652312"
+              ]
+            }
+          ]
+        },
+        {
+          "author_position": "middle",
+          "author": {
+            "id": "https://openalex.org/A5059410140",
+            "display_name": "Ruigang Wang",
+            "orcid": "https://orcid.org/0000-0002-0678-7460"
+          },
+          "institutions": [
+            {
+              "id": "https://openalex.org/I89652312",
+              "display_name": "Northwest A&F University",
+              "ror": "https://ror.org/0051rme32",
+              "country_code": "CN",
+              "type": "education",
+              "lineage": [
+                "https://openalex.org/I89652312"
+              ]
+            }
+          ],
+          "countries": [
+            "CN"
+          ],
+          "is_corresponding": false,
+          "raw_author_name": "Ruigang Wang",
+          "raw_affiliation_strings": [
+            "College of Natural Resources and Environment, Northwest A&F University, Yangling, Shaanxi 712100, PR China"
+          ],
+          "raw_orcid": null,
+          "affiliations": [
+            {
+              "raw_affiliation_string": "College of Natural Resources and Environment, Northwest A&F University, Yangling, Shaanxi 712100, PR China",
+              "institution_ids": [
+                "https://openalex.org/I89652312"
+              ]
+            }
+          ]
+        },
+        {
+          "author_position": "middle",
+          "author": {
+            "id": "https://openalex.org/A5075904399",
+            "display_name": "Lixia Jia",
+            "orcid": "https://orcid.org/0000-0003-1251-4204"
+          },
+          "institutions": [
+            {
+              "id": "https://openalex.org/I89652312",
+              "display_name": "Northwest A&F University",
+              "ror": "https://ror.org/0051rme32",
+              "country_code": "CN",
+              "type": "education",
+              "lineage": [
+                "https://openalex.org/I89652312"
+              ]
+            }
+          ],
+          "countries": [
+            "CN"
+          ],
+          "is_corresponding": false,
+          "raw_author_name": "Lixia Jia",
+          "raw_affiliation_strings": [
+            "College of Natural Resources and Environment, Northwest A&F University, Yangling, Shaanxi 712100, PR China"
+          ],
+          "raw_orcid": null,
+          "affiliations": [
+            {
+              "raw_affiliation_string": "College of Natural Resources and Environment, Northwest A&F University, Yangling, Shaanxi 712100, PR China",
+              "institution_ids": [
+                "https://openalex.org/I89652312"
+              ]
+            }
+          ]
+        },
+        {
+          "author_position": "last",
+          "author": {
+            "id": "https://openalex.org/A5088488990",
+            "display_name": "Haiming Wu",
+            "orcid": "https://orcid.org/0000-0002-6618-3175"
+          },
+          "institutions": [
+            {
+              "id": "https://openalex.org/I89652312",
+              "display_name": "Northwest A&F University",
+              "ror": "https://ror.org/0051rme32",
+              "country_code": "CN",
+              "type": "education",
+              "lineage": [
+                "https://openalex.org/I89652312"
+              ]
+            }
+          ],
+          "countries": [
+            "CN"
+          ],
+          "is_corresponding": true,
+          "raw_author_name": "Haiming Wu",
+          "raw_affiliation_strings": [
+            "College of Natural Resources and Environment, Northwest A&F University, Yangling, Shaanxi 712100, PR China",
+            "Key Laboratory of Plant Nutrition and the Agri-environment in Northwest China, Ministry of Agriculture, PR China"
+          ],
+          "raw_orcid": null,
+          "affiliations": [
+            {
+              "raw_affiliation_string": "College of Natural Resources and Environment, Northwest A&F University, Yangling, Shaanxi 712100, PR China",
+              "institution_ids": [
+                "https://openalex.org/I89652312"
+              ]
+            },
+            {
+              "raw_affiliation_string": "Key Laboratory of Plant Nutrition and the Agri-environment in Northwest China, Ministry of Agriculture, PR China",
+              "institution_ids": []
+            }
+          ]
+        }
+      ],
+      "primary_location": {
+        "id": "doi:10.1016/j.cej.2019.122273",
+        "is_oa": false,
+        "landing_page_url": "https://doi.org/10.1016/j.cej.2019.122273",
+        "pdf_url": null,
+        "source": {
+          "id": "https://openalex.org/S149937609",
+          "display_name": "Chemical Engineering Journal",
+          "issn_l": "1385-8947",
+          "issn": [
+            "1385-8947",
+            "1873-3212"
+          ],
+          "is_oa": false,
+          "is_in_doaj": false,
+          "is_core": true,
+          "host_organization": "https://openalex.org/P4310320990",
+          "host_organization_name": "Elsevier BV",
+          "host_organization_lineage": [
+            "https://openalex.org/P4310320990"
+          ],
+          "host_organization_lineage_names": [
+            "Elsevier BV"
+          ],
+          "type": "journal"
+        },
+        "license": null,
+        "license_id": null,
+        "version": "publishedVersion",
+        "is_accepted": true,
+        "is_published": true,
+        "raw_source_name": "Chemical Engineering Journal",
+        "raw_type": "journal-article"
+      },
+      "best_oa_location": null,
+      "open_access": {
+        "is_oa": false,
+        "oa_status": "closed",
+        "oa_url": null,
+        "any_repository_has_fulltext": false
+      }
+    },
+    {
+      "id": "https://openalex.org/W3094742285",
+      "doi": "https://doi.org/10.1016/j.biortech.2020.124376",
+      "title": "A comprehensive review on emerging constructed wetland coupled microbial fuel cell technology: Potential applications and challenges",
+      "display_name": "A comprehensive review on emerging constructed wetland coupled microbial fuel cell technology: Potential applications and challenges",
+      "publication_year": 2020,
+      "publication_date": "2020-11-06",
+      "language": "en",
+      "type": "article",
+      "cited_by_count": 258,
+      "abstract_inverted_index": null,
+      "authorships": [
+        {
+          "author_position": "first",
+          "author": {
+            "id": "https://openalex.org/A5055480998",
+            "display_name": "Supriya Gupta",
+            "orcid": "https://orcid.org/0000-0003-1915-8935"
+          },
+          "institutions": [
+            {
+              "id": "https://openalex.org/I4210107015",
+              "display_name": "Institute of Minerals and Materials Technology",
+              "ror": "https://ror.org/01g7qth32",
+              "country_code": "IN",
+              "type": "facility",
+              "lineage": [
+                "https://openalex.org/I2799351866",
+                "https://openalex.org/I4210107015",
+                "https://openalex.org/I4210134808",
+                "https://openalex.org/I66760702"
+              ]
+            },
+            {
+              "id": "https://openalex.org/I99364266",
+              "display_name": "Academy of Scientific and Innovative Research",
+              "ror": "https://ror.org/053rcsq61",
+              "country_code": "IN",
+              "type": "education",
+              "lineage": [
+                "https://openalex.org/I99364266"
+              ]
+            }
+          ],
+          "countries": [
+            "IN"
+          ],
+          "is_corresponding": false,
+          "raw_author_name": "Supriya Gupta",
+          "raw_affiliation_strings": [
+            "CSIR-Institute of Minerals and Materials Technology, Bhubaneswar 751013, Odisha, India; Academy of Scientific and Innovative Research (AcSIR), CSIR-Human Resource Development Centre, (CSIR-HRDC) Campus, Ghaziabad, India",
+            "Academy of Scientific and Innovative Research (AcSIR), CSIR-Human Resource Development Centre, (CSIR-HRDC) Campus, Ghaziabad, India",
+            "CSIR-Institute of Minerals and Materials Technology, Bhubaneswar 751013, Odisha, India"
+          ],
+          "raw_orcid": null,
+          "affiliations": [
+            {
+              "raw_affiliation_string": "CSIR-Institute of Minerals and Materials Technology, Bhubaneswar 751013, Odisha, India; Academy of Scientific and Innovative Research (AcSIR), CSIR-Human Resource Development Centre, (CSIR-HRDC) Campus, Ghaziabad, India",
+              "institution_ids": [
+                "https://openalex.org/I99364266"
+              ]
+            },
+            {
+              "raw_affiliation_string": "Academy of Scientific and Innovative Research (AcSIR), CSIR-Human Resource Development Centre, (CSIR-HRDC) Campus, Ghaziabad, India",
+              "institution_ids": [
+                "https://openalex.org/I99364266"
+              ]
+            },
+            {
+              "raw_affiliation_string": "CSIR-Institute of Minerals and Materials Technology, Bhubaneswar 751013, Odisha, India",
+              "institution_ids": [
+                "https://openalex.org/I4210107015"
+              ]
+            }
+          ]
+        },
+        {
+          "author_position": "middle",
+          "author": {
+            "id": "https://openalex.org/A5071890020",
+            "display_name": "Pratiksha Srivastava",
+            "orcid": "https://orcid.org/0000-0002-0940-1420"
+          },
+          "institutions": [
+            {
+              "id": "https://openalex.org/I129801699",
+              "display_name": "University of Tasmania",
+              "ror": "https://ror.org/01nfmeh72",
+              "country_code": "AU",
+              "type": "education",
+              "lineage": [
+                "https://openalex.org/I129801699"
+              ]
+            },
+            {
+              "id": "https://openalex.org/I150609352",
+              "display_name": "Australian Maritime College",
+              "ror": "https://ror.org/05fv9c840",
+              "country_code": "AU",
+              "type": "education",
+              "lineage": [
+                "https://openalex.org/I129801699",
+                "https://openalex.org/I150609352"
+              ]
+            }
+          ],
+          "countries": [
+            "AU"
+          ],
+          "is_corresponding": false,
+          "raw_author_name": "Pratiksha Srivastava",
+          "raw_affiliation_strings": [
+            "Australian Maritime College, College of Sciences and Engineering, University of Tasmania, Launceston 7248, Australia"
+          ],
+          "raw_orcid": null,
+          "affiliations": [
+            {
+              "raw_affiliation_string": "Australian Maritime College, College of Sciences and Engineering, University of Tasmania, Launceston 7248, Australia",
+              "institution_ids": [
+                "https://openalex.org/I129801699",
+                "https://openalex.org/I150609352"
+              ]
+            }
+          ]
+        },
+        {
+          "author_position": "middle",
+          "author": {
+            "id": "https://openalex.org/A5007454364",
+            "display_name": "Sunil A. Patil",
+            "orcid": "https://orcid.org/0000-0002-9053-0173"
+          },
+          "institutions": [
+            {
+              "id": "https://openalex.org/I165916956",
+              "display_name": "Indian Institute of Science Education and Research Mohali",
+              "ror": "https://ror.org/01vztzd79",
+              "country_code": "IN",
+              "type": "education",
+              "lineage": [
+                "https://openalex.org/I165916956"
+              ]
+            }
+          ],
+          "countries": [
+            "IN"
+          ],
+          "is_corresponding": false,
+          "raw_author_name": "Sunil A. Patil",
+          "raw_affiliation_strings": [
+            "Department of Earth and Environmental Sciences, Indian Institute of Science Education and Research Mohali (IISER Mohali), Knowledge City, Sector 81, SAS Nagar, 140306, Punjab, India"
+          ],
+          "raw_orcid": null,
+          "affiliations": [
+            {
+              "raw_affiliation_string": "Department of Earth and Environmental Sciences, Indian Institute of Science Education and Research Mohali (IISER Mohali), Knowledge City, Sector 81, SAS Nagar, 140306, Punjab, India",
+              "institution_ids": [
+                "https://openalex.org/I165916956"
+              ]
+            }
+          ]
+        },
+        {
+          "author_position": "last",
+          "author": {
+            "id": "https://openalex.org/A5067441428",
+            "display_name": "Asheesh Kumar Yadav",
+            "orcid": "https://orcid.org/0000-0002-2359-0627"
+          },
+          "institutions": [
+            {
+              "id": "https://openalex.org/I4210107015",
+              "display_name": "Institute of Minerals and Materials Technology",
+              "ror": "https://ror.org/01g7qth32",
+              "country_code": "IN",
+              "type": "facility",
+              "lineage": [
+                "https://openalex.org/I2799351866",
+                "https://openalex.org/I4210107015",
+                "https://openalex.org/I4210134808",
+                "https://openalex.org/I66760702"
+              ]
+            }
+          ],
+          "countries": [
+            "IN"
+          ],
+          "is_corresponding": true,
+          "raw_author_name": "Asheesh Kumar Yadav",
+          "raw_affiliation_strings": [
+            "CSIR-Institute of Minerals and Materials Technology, Bhubaneswar 751013, Odisha, India. Electronic address: asheesh.yadav@gmail.com",
+            "CSIR-Institute of Minerals and Materials Technology, Bhubaneswar 751013, Odisha, India"
+          ],
+          "raw_orcid": null,
+          "affiliations": [
+            {
+              "raw_affiliation_string": "CSIR-Institute of Minerals and Materials Technology, Bhubaneswar 751013, Odisha, India. Electronic address: asheesh.yadav@gmail.com",
+              "institution_ids": [
+                "https://openalex.org/I4210107015"
+              ]
+            },
+            {
+              "raw_affiliation_string": "CSIR-Institute of Minerals and Materials Technology, Bhubaneswar 751013, Odisha, India",
+              "institution_ids": [
+                "https://openalex.org/I4210107015"
+              ]
+            }
+          ]
+        }
+      ],
+      "primary_location": {
+        "id": "doi:10.1016/j.biortech.2020.124376",
+        "is_oa": false,
+        "landing_page_url": "https://doi.org/10.1016/j.biortech.2020.124376",
+        "pdf_url": null,
+        "source": {
+          "id": "https://openalex.org/S21442059",
+          "display_name": "Bioresource Technology",
+          "issn_l": "0960-8524",
+          "issn": [
+            "0960-8524",
+            "1873-2976"
+          ],
+          "is_oa": false,
+          "is_in_doaj": false,
+          "is_core": true,
+          "host_organization": "https://openalex.org/P4310320990",
+          "host_organization_name": "Elsevier BV",
+          "host_organization_lineage": [
+            "https://openalex.org/P4310320990"
+          ],
+          "host_organization_lineage_names": [
+            "Elsevier BV"
+          ],
+          "type": "journal"
+        },
+        "license": null,
+        "license_id": null,
+        "version": "publishedVersion",
+        "is_accepted": true,
+        "is_published": true,
+        "raw_source_name": "Bioresource Technology",
+        "raw_type": "journal-article"
+      },
+      "best_oa_location": {
+        "id": "pmh:oai:figshare.com:article/23000477",
+        "is_oa": true,
+        "landing_page_url": "https://figshare.com/articles/journal_contribution/A_comprehensive_review_on_emerging_constructed_wetland_coupled_microbial_fuel_cell_technology_potential_applications_and_challenges/23000477",
+        "pdf_url": null,
+        "source": {
+          "id": "https://openalex.org/S4377196282",
+          "display_name": "Figshare",
+          "issn_l": null,
+          "issn": null,
+          "is_oa": false,
+          "is_in_doaj": false,
+          "is_core": false,
+          "host_organization": "https://openalex.org/I4210132348",
+          "host_organization_name": "Figshare (United Kingdom)",
+          "host_organization_lineage": [
+            "https://openalex.org/I4210132348"
+          ],
+          "host_organization_lineage_names": [],
+          "type": "repository"
+        },
+        "license": "cc-by",
+        "license_id": "https://openalex.org/licenses/cc-by",
+        "version": "submittedVersion",
+        "is_accepted": false,
+        "is_published": false,
+        "raw_source_name": null,
+        "raw_type": "Text"
+      },
+      "open_access": {
+        "is_oa": true,
+        "oa_status": "green",
+        "oa_url": "https://figshare.com/articles/journal_contribution/A_comprehensive_review_on_emerging_constructed_wetland_coupled_microbial_fuel_cell_technology_potential_applications_and_challenges/23000477",
+        "any_repository_has_fulltext": true
+      }
+    }
+  ],
+  "group_by": []
+}

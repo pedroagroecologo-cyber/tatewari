@@ -6,9 +6,15 @@ import json
 
 import pytest
 
-from tatewari.cosecha import COLUMNAS_BITACORA, Cosecha, ErrorCosecha, cargar_fixture
+from tatewari.cosecha import (
+    COLUMNAS_BITACORA,
+    INTENTOS_MAXIMOS,
+    Cosecha,
+    ErrorCosecha,
+    cargar_fixture,
+)
 from tatewari.fuentes import CAMPOS_REGISTRO, NR
-from tatewari.http import ErrorHttpServidor
+from tatewari.http import Cuota, ErrorHttpServidor
 
 
 @pytest.fixture
@@ -309,3 +315,175 @@ def test_los_registros_se_acumulan_con_sus_duplicados(cosecha, ruta_fixture_demo
     cosecha.ejecutar(max_consultas=1, fixture=ruta_fixture_demo)
 
     assert len(cosecha.leer_registros()) == 28
+
+
+# ---------------------------------------------------------------------------
+# Reintentos
+# ---------------------------------------------------------------------------
+
+
+def _cliente_que_falla(cliente_falso, veces):
+    return cliente_falso(
+        [ErrorHttpServidor("503", url="https://x", estado=503) for _ in range(veces)]
+    )
+
+
+def test_sin_reintentar_una_ecuacion_fallida_no_se_repite(
+    protocolo, config_temporal, cliente_falso
+):
+    cosecha = Cosecha(
+        "demo", protocolo, config_temporal, cliente=_cliente_que_falla(cliente_falso, 1)
+    )
+    cosecha.ejecutar(max_consultas=1)
+
+    cosecha._cliente = _cliente_que_falla(cliente_falso, 1)
+    segundo = cosecha.ejecutar(max_consultas=1)
+
+    assert [e.numero for e in segundo.ecuaciones] == [2]
+
+
+def test_con_reintentar_la_ecuacion_fallida_vuelve_a_la_cola(
+    protocolo, config_temporal, cliente_falso, respuesta
+):
+    cosecha = Cosecha(
+        "demo", protocolo, config_temporal, cliente=_cliente_que_falla(cliente_falso, 1)
+    )
+    cosecha.ejecutar(max_consultas=1)
+
+    cosecha._cliente = cliente_falso([respuesta("openalex_pagina2.json")])
+    segundo = cosecha.ejecutar(max_consultas=1, reintentar=True)
+
+    assert [e.numero for e in segundo.ecuaciones] == [1]
+    assert segundo.registros_nuevos == 1
+    assert cosecha.cargar_estado()["hechas"]["1"]["intentos"] == 2
+
+
+def test_una_ecuacion_rota_no_atasca_la_cosecha_para_siempre(
+    protocolo, config_temporal, cliente_falso
+):
+    """A los tres intentos se da por perdida y deja de volver a la cola."""
+    cosecha = Cosecha("demo", protocolo, config_temporal)
+
+    for _ in range(INTENTOS_MAXIMOS):
+        cosecha._cliente = _cliente_que_falla(cliente_falso, 1)
+        resumen = cosecha.ejecutar(max_consultas=1, reintentar=True)
+        assert [e.numero for e in resumen.ecuaciones] == [1]
+
+    assert resumen.perdidas == 1
+    assert cosecha.cargar_estado()["hechas"]["1"]["intentos"] == INTENTOS_MAXIMOS
+    assert "se da por perdida" in cosecha.leer_bitacora()[-1]["observaciones"]
+
+    cosecha._cliente = _cliente_que_falla(cliente_falso, 1)
+    siguiente = cosecha.ejecutar(max_consultas=1, reintentar=True)
+    assert [e.numero for e in siguiente.ecuaciones] == [2]
+
+
+def test_reintentar_no_toca_las_ecuaciones_que_salieron_bien(
+    cosecha, ruta_fixture_demo
+):
+    cosecha.ejecutar(max_consultas=2, fixture=ruta_fixture_demo)
+
+    segundo = cosecha.ejecutar(max_consultas=2, fixture=ruta_fixture_demo, reintentar=True)
+
+    assert [e.numero for e in segundo.ecuaciones] == [3, 4]
+
+
+# ---------------------------------------------------------------------------
+# Cuota
+# ---------------------------------------------------------------------------
+
+
+class ClienteConCuota:
+    """Cliente falso que va gastando cuota como hace OpenAlex."""
+
+    def __init__(self, respuesta, restante, coste=10):
+        self._respuesta = respuesta
+        self.cuota = Cuota(limite=1000, restante=restante, coste=coste)
+        self.urls = []
+
+    def obtener_json(self, url):
+        self.urls.append(url)
+        self.cuota = Cuota(
+            limite=1000,
+            restante=max(0, self.cuota.restante - self.cuota.coste),
+            coste=self.cuota.coste,
+        )
+        return self._respuesta
+
+
+def test_la_cosecha_se_para_antes_de_agotar_la_cuota(
+    protocolo, config_temporal, respuesta
+):
+    """Mejor parar entera que dejar una ecuacion a medias en la bitacora.
+
+    Con 30 creditos y 10 por peticion caben 3 peticiones. Tras la primera
+    ecuacion quedan 2, que no alcanzan para otra ecuacion de hasta 3 paginas,
+    asi que se corta ahi en vez de empezar algo que no se puede terminar.
+    """
+    cliente = ClienteConCuota(respuesta("openalex_pagina2.json"), restante=30)
+    cosecha = Cosecha("demo", protocolo, config_temporal, cliente=cliente)
+
+    resumen = cosecha.ejecutar(max_consultas=8, max_paginas=3)
+
+    assert resumen.detenido_por_cuota
+    assert resumen.procesadas == 1
+    assert resumen.pendientes == 39
+    assert "poca cuota" in resumen.resumen()
+
+
+def test_con_cuota_de_sobra_el_lote_entero_se_procesa(
+    protocolo, config_temporal, respuesta
+):
+    cliente = ClienteConCuota(respuesta("openalex_pagina2.json"), restante=1000)
+    cosecha = Cosecha("demo", protocolo, config_temporal, cliente=cliente)
+
+    resumen = cosecha.ejecutar(max_consultas=3, max_paginas=1)
+
+    assert not resumen.detenido_por_cuota
+    assert resumen.procesadas == 3
+    assert "Cuota: quedan" in resumen.resumen()
+
+
+def test_una_fuente_sin_cuota_no_detiene_nada(
+    protocolo, config_temporal, cliente_falso, respuesta
+):
+    cliente = cliente_falso([respuesta("openalex_pagina2.json")] * 3)
+    cosecha = Cosecha("demo", protocolo, config_temporal, cliente=cliente)
+
+    resumen = cosecha.ejecutar(max_consultas=3, max_paginas=1)
+
+    assert not resumen.detenido_por_cuota
+    assert resumen.procesadas == 3
+
+
+# ---------------------------------------------------------------------------
+# Resumenes ausentes y codificacion de la bitacora
+# ---------------------------------------------------------------------------
+
+
+def test_se_cuentan_los_registros_sin_resumen(cosecha, ruta_fixture_demo):
+    """Dato operativo: en OpenAlex la mayoria de obras no traen resumen."""
+    resumen = cosecha.ejecutar(max_consultas=1, fixture=ruta_fixture_demo)
+
+    assert resumen.registros_nuevos == 14
+    assert resumen.sin_resumen == 1
+    assert "sin resumen" in resumen.resumen()
+
+
+def test_la_bitacora_lleva_bom_para_que_excel_la_abra_bien(cosecha, ruta_fixture_demo):
+    """Unica excepcion documentada a la regla 8 de AGENTS.md."""
+    cosecha.ejecutar(max_consultas=1, fixture=ruta_fixture_demo)
+
+    crudo = cosecha.ruta_bitacora.read_bytes()
+
+    assert crudo.startswith(b"\xef\xbb\xbf")
+    # Y se relee sin que el BOM se cuele en el nombre de la primera columna.
+    assert list(cosecha.leer_bitacora()[0])[0] == "N"
+
+
+def test_los_acentos_de_la_bitacora_sobreviven(cosecha, ruta_fixture_demo):
+    cosecha.ejecutar(max_consultas=2, fixture=ruta_fixture_demo)
+
+    texto = cosecha.ruta_bitacora.read_text(encoding="utf-8-sig")
+
+    assert "sirvió" in texto
