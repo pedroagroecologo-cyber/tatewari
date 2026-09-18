@@ -53,11 +53,23 @@ CODIGOS_REINTENTABLES = frozenset({429, 500, 502, 503, 504})
 
 
 class ErrorHttp(Exception):
-    """Fallo al pedir una URL. Se anota en la bitácora y la cosecha continúa."""
+    """Fallo al pedir una URL. Se anota en la bitácora y la cosecha continúa.
 
-    def __init__(self, mensaje: str, url: str, estado: int | None = None) -> None:
+    `cuerpo` es lo que respondió el servidor, recortado. Se guarda porque a veces
+    es lo único que explica el fallo: Ollama contesta 501 con «This server does
+    not support embeddings» y sin ese texto solo se sabría que fue un 501.
+    """
+
+    def __init__(
+        self,
+        mensaje: str,
+        url: str,
+        estado: int | None = None,
+        cuerpo: str = "",
+    ) -> None:
         self.url = url
         self.estado = estado
+        self.cuerpo = cuerpo
         super().__init__(mensaje)
 
 
@@ -129,6 +141,25 @@ def _entero_de_cabecera(cabeceras: Any, nombre: str) -> int | None:
         return None
 
 
+#: Cuánto del cuerpo de un error se guarda. Lo bastante para el mensaje del
+#: servidor, no tanto como para volcar una página de error entera en la consola.
+LIMITE_CUERPO = 500
+
+
+def _cuerpo_de(respuesta: Any) -> str:
+    """El texto que devolvió el servidor, recortado. Nunca falla.
+
+    Un doble de pruebas puede no tener `text`, y leer el cuerpo de una respuesta
+    a medio llegar puede lanzar: ninguna de las dos cosas puede tumbar el manejo
+    del error que estamos construyendo.
+    """
+    try:
+        texto = getattr(respuesta, "text", "") or ""
+    except Exception:  # noqa: BLE001 - leer el cuerpo no puede romper nada
+        return ""
+    return " ".join(str(texto).split())[:LIMITE_CUERPO]
+
+
 def leer_cuota(cabeceras: Any) -> Cuota:
     """Extrae la cuota de las cabeceras de una respuesta."""
     return Cuota(
@@ -162,13 +193,46 @@ class ClienteHttp:
             self.sesion = requests.Session()
         self.sesion.headers.update({"User-Agent": self.agente_usuario})
 
-    def obtener_json(self, url: str) -> dict:
-        """Pide una URL y devuelve el JSON. Lanza `ErrorHttp` si no se puede."""
+    def obtener_json(self, url: str, tiempo_espera: float | None = None) -> dict:
+        """Pide una URL con GET y devuelve el JSON.
+
+        `tiempo_espera` sustituye al del cliente solo para esta llamada: una
+        petición a la máquina local no necesita los mismos segundos que una a
+        una API remota. Lanza `ErrorHttp` si no se puede.
+        """
+        return self._pedir("GET", url, None, tiempo_espera)
+
+    def enviar_json(
+        self, url: str, cuerpo: Any, tiempo_espera: float | None = None
+    ) -> dict:
+        """Manda `cuerpo` como JSON con POST y devuelve el JSON de respuesta.
+
+        Existe para hablar con Ollama, que genera por POST. La política de
+        reintentos es la misma que la del GET, y por eso está aquí y no en un
+        cliente aparte: una sola política HTTP en todo el proyecto.
+        """
+        return self._pedir("POST", url, cuerpo, tiempo_espera)
+
+    def _pedir(
+        self,
+        metodo: str,
+        url: str,
+        cuerpo: Any,
+        tiempo_espera: float | None,
+    ) -> dict:
+        espera_maxima = (
+            self.tiempo_espera if tiempo_espera is None else tiempo_espera
+        )
         ultimo: ErrorHttp | None = None
 
         for intento in range(1, self.intentos + 1):
             try:
-                respuesta = self.sesion.get(url, timeout=self.tiempo_espera)
+                if metodo == "POST":
+                    respuesta = self.sesion.post(
+                        url, json=cuerpo, timeout=espera_maxima
+                    )
+                else:
+                    respuesta = self.sesion.get(url, timeout=espera_maxima)
             except requests.RequestException as error:
                 ultimo = ErrorRed(
                     f"No se pudo conectar con {url}: {error}", url=url
@@ -191,9 +255,14 @@ class ClienteHttp:
                         estado=estado,
                     ) from error
 
+            cuerpo = _cuerpo_de(respuesta)
+
             if estado in CODIGOS_REINTENTABLES:
                 ultimo = ErrorHttpServidor(
-                    f"El servidor respondió {estado} en {url}.", url=url, estado=estado
+                    f"El servidor respondió {estado} en {url}.",
+                    url=url,
+                    estado=estado,
+                    cuerpo=cuerpo,
                 )
                 if intento == self.intentos:
                     break
@@ -206,10 +275,14 @@ class ClienteHttp:
                     f"Revisa cómo se construyó la URL.",
                     url=url,
                     estado=estado,
+                    cuerpo=cuerpo,
                 )
 
             ultimo = ErrorHttpServidor(
-                f"Respuesta inesperada {estado} en {url}.", url=url, estado=estado
+                f"Respuesta inesperada {estado} en {url}.",
+                url=url,
+                estado=estado,
+                cuerpo=cuerpo,
             )
             if intento == self.intentos:
                 break
