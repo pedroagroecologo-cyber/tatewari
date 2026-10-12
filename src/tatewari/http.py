@@ -25,6 +25,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
+from urllib.parse import urlsplit
 
 import requests
 
@@ -187,6 +188,9 @@ class ClienteHttp:
     sesion: Any | None = None
     esperas: list[float] = field(default_factory=list, repr=False)
     cuota: Cuota = field(default_factory=Cuota, repr=False)
+    #: Token por nombre de servidor. Se manda como ``Authorization: Bearer`` y
+    #: solo a ese servidor; la URL queda limpia para la bitácora.
+    credenciales: dict[str, str] = field(default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
         if self.sesion is None:
@@ -224,15 +228,17 @@ class ClienteHttp:
             self.tiempo_espera if tiempo_espera is None else tiempo_espera
         )
         ultimo: ErrorHttp | None = None
+        opciones: dict[str, Any] = {"timeout": espera_maxima}
+        token = self.credenciales.get(urlsplit(url).hostname or "")
+        if token:
+            opciones["headers"] = {"Authorization": f"Bearer {token}"}
 
         for intento in range(1, self.intentos + 1):
             try:
                 if metodo == "POST":
-                    respuesta = self.sesion.post(
-                        url, json=cuerpo, timeout=espera_maxima
-                    )
+                    respuesta = self.sesion.post(url, json=cuerpo, **opciones)
                 else:
-                    respuesta = self.sesion.get(url, timeout=espera_maxima)
+                    respuesta = self.sesion.get(url, **opciones)
             except requests.RequestException as error:
                 ultimo = ErrorRed(
                     f"No se pudo conectar con {url}: {error}", url=url

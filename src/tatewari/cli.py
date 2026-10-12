@@ -15,6 +15,13 @@ Las subórdenes disponibles:
     python -m tatewari texto-completo demo
     python -m tatewari exportar demo
     python -m tatewari estado demo
+    python -m tatewari biblioteca importar
+
+Y las de Knowledge Studio y ZEA MAYZ, definidas en `cli_conocimiento`:
+
+    python -m tatewari conocimiento procesar apuntes.pdf
+    python -m tatewari pedir "procesa este documento apuntes.pdf"
+    python -m tatewari zea-mayz divulgar --tema "suelo"
 
 El recorrido completo, de principio a fin, está en el README.
 """
@@ -37,6 +44,11 @@ from .auditoria import (
     muestra_aleatoria,
     registrar_auditoria,
 )
+from .biblioteca import (
+    ErrorBiblioteca,
+    abrir as abrir_biblioteca,
+    reconstruir as reconstruir_biblioteca,
+)
 from .config import ErrorConfig, cargar_config
 from .cosecha import FUENTES, LOTE_POR_DEFECTO, PAGINAS_POR_DEFECTO, Cosecha, ErrorCosecha
 from .cribado import (
@@ -47,6 +59,8 @@ from .cribado import (
     anadir_decisiones,
     protocolo_registrado,
 )
+from .cli_conocimiento import anadir_ordenes
+from .interfaz.orden import anadir_orden as anadir_orden_interfaz
 from .cribado_modelo import LIMITE_RESUMEN, cribar_dudosos, recortar
 from .fuentes import NR
 from .exportar import exportar
@@ -620,6 +634,109 @@ def construir_parser() -> argparse.ArgumentParser:
     )
     estado.set_defaults(funcion=_orden_estado)
 
+    # Knowledge Studio y ZEA MAYZ viven en su propio módulo para no engordar este.
+    anadir_ordenes(subordenes, _preparar_parser, _FormateadorEspanol)
+    anadir_orden_interfaz(subordenes, _preparar_parser, _FormateadorEspanol)
+
+    biblioteca = subordenes.add_parser(
+        "biblioteca",
+        help="El acervo acumulativo de todas las revisiones.",
+        description=(
+            "Acumula las revisiones en una base SQLite para poder preguntarle "
+            "cosas que ninguna carpeta contesta sola: si un artículo ya se leyó "
+            "en otra revisión, o qué hay sobre un tema venga de donde venga. La "
+            "base se reconstruye desde los archivos de evidencia; los archivos "
+            "de evidencia no se reconstruyen desde la base."
+        ),
+        formatter_class=_FormateadorEspanol,
+        add_help=False,
+    )
+    _preparar_parser(biblioteca)
+    biblioteca.set_defaults(funcion=_orden_ayuda, parser_propio=biblioteca)
+    acciones_biblioteca = biblioteca.add_subparsers(dest="accion", metavar="ACCIÓN")
+
+    importar = acciones_biblioteca.add_parser(
+        "importar",
+        help="Vuelca una revisión en la biblioteca.",
+        description=(
+            "Vuelca una carpeta de revisión en la biblioteca. Volver a importar "
+            "la misma revisión es seguro: las referencias se funden en vez de "
+            "duplicarse."
+        ),
+        formatter_class=_FormateadorEspanol,
+        add_help=False,
+    )
+    _preparar_parser(importar)
+    importar.add_argument(
+        "revision",
+        metavar="REVISIÓN",
+        nargs="?",
+        default=None,
+        help="Nombre de la revisión. Si se omite, se importan todas.",
+    )
+    importar.set_defaults(funcion=_orden_biblioteca_importar)
+
+    buscar = acciones_biblioteca.add_parser(
+        "buscar",
+        help="Busca referencias en todo el acervo.",
+        description="Busca referencias acumuladas. Los filtros se acumulan.",
+        formatter_class=_FormateadorEspanol,
+        add_help=False,
+    )
+    _preparar_parser(buscar)
+    buscar.add_argument(
+        "texto",
+        metavar="TEXTO",
+        nargs="?",
+        default=None,
+        help="Busca en el título y en el resumen.",
+    )
+    buscar.add_argument(
+        "--revision", metavar="NOMBRE", default=None, help="Solo de esta revisión."
+    )
+    buscar.add_argument(
+        "--estado",
+        choices=DECISIONES,
+        default=None,
+        help="Solo los que quedaron en este estado.",
+    )
+    buscar.add_argument(
+        "--desde",
+        metavar="AÑO",
+        type=int,
+        default=None,
+        dest="anio_desde",
+        help="Solo los publicados desde ese año.",
+    )
+    buscar.add_argument(
+        "--cuantos", metavar="N", type=int, default=25, help="Cuántos mostrar."
+    )
+    buscar.set_defaults(funcion=_orden_biblioteca_buscar)
+
+    resumen_biblioteca = acciones_biblioteca.add_parser(
+        "resumen",
+        help="Cuántas referencias y revisiones hay acumuladas.",
+        description="Resumen del acervo: cuánto hay y de dónde viene.",
+        formatter_class=_FormateadorEspanol,
+        add_help=False,
+    )
+    _preparar_parser(resumen_biblioteca)
+    resumen_biblioteca.set_defaults(funcion=_orden_biblioteca_resumen)
+
+    rehacer = acciones_biblioteca.add_parser(
+        "reconstruir",
+        help="Borra la base y la rehace desde las revisiones.",
+        description=(
+            "Borra la base y la rehace recorriendo las carpetas de revisiones. "
+            "Es seguro porque la evidencia vive en los archivos, no aquí. Lo "
+            "único que no vuelve son las anotaciones puestas a mano."
+        ),
+        formatter_class=_FormateadorEspanol,
+        add_help=False,
+    )
+    _preparar_parser(rehacer)
+    rehacer.set_defaults(funcion=_orden_biblioteca_reconstruir)
+
     return parser
 
 
@@ -676,7 +793,9 @@ def _orden_cosechar(args: argparse.Namespace) -> int:
         )
         return SALIDA_CONFIGURACION
 
-    cliente = None if sin_red else ClienteHttp()
+    cliente = (
+        None if sin_red else ClienteHttp(credenciales=config.credenciales_http())
+    )
 
     try:
         cosecha = Cosecha(
@@ -1504,6 +1623,122 @@ def _siguiente_paso(cribado: Cribado, resultado, resueltos: dict) -> str:
         f"«tatewari pendientes {revision} --modo auditoria» para auditar una "
         f"muestra de las exclusiones (AGENTS.md, regla 4)."
     )
+
+
+def _config_o_error():
+    """La configuración, o `(None, codigo)` si no se pudo cargar."""
+    try:
+        return cargar_config(), SALIDA_OK
+    except ErrorConfig as error:
+        print(error, file=sys.stderr)
+        return None, SALIDA_CONFIGURACION
+
+
+def _orden_biblioteca_importar(args: argparse.Namespace) -> int:
+    config, codigo = _config_o_error()
+    if config is None:
+        return codigo
+
+    carpetas = (
+        [config.datos / args.revision]
+        if args.revision
+        else sorted(c for c in config.datos.glob("*") if c.is_dir())
+    )
+    if not carpetas:
+        print(
+            f"No hay ninguna revisión en {config.datos}. Lanza antes "
+            f"«tatewari cosechar».",
+            file=sys.stderr,
+        )
+        return SALIDA_CRIBADO
+
+    try:
+        with abrir_biblioteca(config.datos) as biblioteca:
+            for carpeta in carpetas:
+                resumen = biblioteca.importar_revision(carpeta)
+                print(resumen.resumen())
+                print()
+            print(biblioteca.resumen())
+    except ErrorBiblioteca as error:
+        print(error, file=sys.stderr)
+        return SALIDA_CRIBADO
+    return SALIDA_OK
+
+
+def _orden_biblioteca_buscar(args: argparse.Namespace) -> int:
+    config, codigo = _config_o_error()
+    if config is None:
+        return codigo
+
+    try:
+        with abrir_biblioteca(config.datos) as biblioteca:
+            referencias = biblioteca.buscar(
+                texto=args.texto,
+                revision=args.revision,
+                estado=args.estado,
+                anio_desde=args.anio_desde,
+                limite=args.cuantos,
+            )
+    except ErrorBiblioteca as error:
+        print(error, file=sys.stderr)
+        return SALIDA_CRIBADO
+
+    if not referencias:
+        print(
+            "Ninguna referencia coincide. Si la biblioteca está vacía, impórtala "
+            "con «tatewari biblioteca importar»."
+        )
+        return SALIDA_OK
+
+    print(f"{len(referencias)} referencias:")
+    print()
+    for referencia in referencias:
+        autores = referencia.get("autores") or ["NR"]
+        print(
+            f"{referencia.get('id', 'NR')}  {referencia.get('anio', 'NR')}  "
+            f"{referencia.get('titulo', 'NR')}"
+        )
+        print(f"        {'; '.join(autores)}")
+        print(f"        DOI: {referencia.get('doi', 'NR')}")
+        print()
+    return SALIDA_OK
+
+
+def _orden_biblioteca_resumen(args: argparse.Namespace) -> int:
+    config, codigo = _config_o_error()
+    if config is None:
+        return codigo
+
+    try:
+        with abrir_biblioteca(config.datos) as biblioteca:
+            print(biblioteca.resumen())
+    except ErrorBiblioteca as error:
+        print(error, file=sys.stderr)
+        return SALIDA_CRIBADO
+    return SALIDA_OK
+
+
+def _orden_biblioteca_reconstruir(args: argparse.Namespace) -> int:
+    config, codigo = _config_o_error()
+    if config is None:
+        return codigo
+
+    try:
+        resumenes = reconstruir_biblioteca(config.datos)
+    except ErrorBiblioteca as error:
+        print(error, file=sys.stderr)
+        return SALIDA_CRIBADO
+
+    print(f"Biblioteca rehecha desde {len(resumenes)} revisiones.")
+    print()
+    for resumen in resumenes:
+        print(resumen.resumen())
+        print()
+    print(
+        "Las anotaciones y etiquetas puestas a mano NO vuelven: no están en "
+        "ningún archivo de evidencia."
+    )
+    return SALIDA_OK
 
 
 def _forzar_utf8() -> None:

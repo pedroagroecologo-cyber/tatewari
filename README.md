@@ -27,7 +27,8 @@ literales, cribado que nunca descarta solo, y solo fuentes legales y abiertas.
 | 8. Exportación | `exportar` | `incluidos.bib` y tres `.md` |
 
 Y, cuando hace falta: `ordenar`, `similares` y `casi-duplicados` para leer por
-cercanía, y `estado` para saber por dónde va la cosa.
+cercanía, `estado` para saber por dónde va la cosa, y `biblioteca` para acumular
+varias revisiones en un acervo consultable.
 
 ---
 
@@ -42,6 +43,9 @@ tenerlo en el Escritorio:
 ```bash
 powershell -ExecutionPolicy Bypass -File scripts\windows\crear-acceso-directo.ps1
 ```
+
+Eso deja dos iconos: **Tatewari** (la consola) y **Tatewari - interfaz** (la
+interfaz gráfica, ver más abajo).
 
 ### A mano, en cualquier sistema
 
@@ -264,6 +268,213 @@ lectura**: no escribe nada.
 
 ---
 
+## La interfaz gráfica
+
+Todo lo anterior tiene también ventana: una biblioteca de tres paneles al estilo
+de Zotero, en el navegador.
+
+```bash
+python -m tatewari interfaz
+```
+
+O doble clic en `scripts\windows\tatewari-interfaz.bat` (o en el icono
+**Tatewari - interfaz** del Escritorio), que además abre Ollama si estaba
+cerrado. Al arrancar carga el modelo local en la tarjeta para que el primer
+documento no espere; la luz de la barra superior dice si ya está cargado.
+
+- **Izquierda**, las colecciones: cada revisión con sus incluidos, dudosos y
+  excluidos, y el Vault de Obsidian por estado (DRAFT, REVIEW, APPROVED,
+  PUBLISHED), con conflictos, fuentes, propuestas y borradores de ZEA MAYZ.
+- **Centro**, los elementos, que se ordenan por columna y se buscan sin
+  importar los acentos.
+- **Derecha**, la ficha: el resumen y la decisión de un artículo, con botones
+  para incluir, dejar dudoso o excluir (pide motivo, como `decidir`); o la nota
+  entera, con sus `[[enlaces]]` navegables y los botones para aprobar (con tu
+  nombre), abrirla en Obsidian o abrir el documento original.
+- Arrastra un PDF, un Word o un PowerPoint a la ventana y se procesa; el avance
+  se ve en la barra de abajo.
+
+Corre solo en `127.0.0.1` y cada arranque genera una clave nueva: ninguna otra
+computadora ni ninguna otra página web abierta en el navegador puede leer ni
+cambiar nada. Si cierras la ventana de la consola, la interfaz se apaga. No usa
+el código de Zotero (es AGPL y Tatewari es MIT): solo su disposición.
+
+```bash
+python -m tatewari interfaz --no-abrir --puerto 9000
+```
+
+---
+
+## Knowledge Studio: de documentos a un Vault de Obsidian
+
+Knowledge Studio lee documentos académicos (apuntes, diapositivas, artículos) y
+los convierte en notas de Obsidian enlazadas entre sí, con el modelo local de
+Ollama. Cada afirmación dice de qué página, diapositiva o sección sale; lo que
+el modelo no puede respaldar con una cita literal del documento queda marcado
+como interpretación y en `REVIEW`. **Nada nace aprobado**: `APPROVED` lo pone
+una persona. La documentación completa está en
+[docs/KNOWLEDGE_STUDIO.md](docs/KNOWLEDGE_STUDIO.md), y el camino hasta el libro
+de divulgación en [docs/ZEA_MAYZ_WORKFLOW.md](docs/ZEA_MAYZ_WORKFLOW.md).
+
+Formatos: PDF (con texto; el OCR todavía no está), DOCX, PPTX, TXT y Markdown.
+Para PDF hace falta PyMuPDF:
+
+```bash
+python -m pip install -e ".[documentos]"
+```
+
+### 1. Decir dónde está el Vault
+
+En el `.env` (o con `--vault RUTA` en cada orden):
+
+```
+TATEWARI_OBSIDIAN_VAULT=C:\Users\TU_USUARIO\Documents\ZEA MAYZ
+```
+
+Tatewari solo escribe dentro del Vault y de la carpeta de datos. No toca
+`.obsidian`, `.git` ni la papelera, y ningún nombre que proponga el modelo puede
+sacar un archivo de ahí.
+
+### 2. Crear la estructura
+
+```bash
+python -m tatewari conocimiento crear-vault
+```
+
+Crea `00_INBOX` … `09_LIBRO`, las plantillas de concepto, fuente, personaje,
+lugar y proceso, y la configuración en `.tatewari/vault.json` (donde se pueden
+renombrar las carpetas). No pisa nada que ya exista. Abre la carpeta en Obsidian
+con «Open folder as vault».
+
+### 3. Comprobar Ollama y elegir modelo
+
+```bash
+python -m tatewari conocimiento modelos
+```
+
+Dice qué modelo haría cada tarea: **extracción** (leer los trozos del documento)
+y **síntesis** (la divulgación). Sin configurar nada elige el que entra en la
+tarjeta; con 4 GB de VRAM, `qwen3:4b`:
+
+```bash
+ollama pull qwen3:4b
+```
+
+Para usar otro, `TATEWARI_MODELO_EXTRACCION` y `TATEWARI_MODELO_SINTESIS` en el
+`.env`, o por orden:
+
+```bash
+python -m tatewari conocimiento procesar apuntes.pdf --modelo-sintesis qwen3:8b
+```
+
+Un 8B o un 14B escriben mejor, pero con 4 GB de VRAM Ollama los reparte con la
+RAM y cada respuesta tarda minutos. Los nombres de modelo no están fijos: solo
+ordenan la preferencia de la elección automática.
+
+### 4. Procesar el primer documento
+
+```bash
+python -m tatewari conocimiento procesar tests/fixtures/conocimiento/edafologia_unidad1.md
+```
+
+Es un documento **ficticio** de un curso universitario de edafología que viene
+con el repositorio. En la máquina de referencia (RTX 3050, 4 GB) tarda unos dos
+minutos y deja:
+
+- el original, sin tocar, en `01_MATERIA`;
+- una nota de fuente en `01_MATERIA` con los conceptos extraídos y las
+  referencias bibliográficas que están **en el documento** (las que el modelo
+  inventa se descartan);
+- una nota por concepto en `02_CONCEPTOS` (personas, lugares y referencias van a
+  sus carpetas), con definición, cita literal, ubicación, relaciones como
+  `[[enlaces]]` y fuentes;
+- `Índice de conocimiento.md` en la raíz, que da un centro a la vista de grafo;
+- un reporte en `00_INBOX/reportes`.
+
+Sin Ollama se puede procesar igual, sin conceptos: texto, nota de fuente y
+referencias.
+
+```bash
+python -m tatewari conocimiento procesar apuntes.pdf --sin-modelo
+```
+
+### 5. Revisar y aprobar
+
+```bash
+python -m tatewari conocimiento conceptos --estado REVIEW
+```
+
+```bash
+python -m tatewari conocimiento conflictos
+```
+
+```bash
+python -m tatewari conocimiento estado "Horizonte A" APPROVED --autor "Tu nombre"
+```
+
+Estados: `DRAFT` → `REVIEW` → `APPROVED` → `PUBLISHED`. Una nota aprobada, o
+una que alguien editó a mano, **no se reescribe nunca**: si un documento nuevo
+trae algo sobre ella, Tatewari deja una propuesta en `00_INBOX/propuestas`. Si
+dos fuentes se contradicen, la nota conserva las dos versiones con su origen y
+pasa a `REVIEW`; Tatewari no elige.
+
+### 6. Toda una carpeta, y el mantenimiento
+
+```bash
+python -m tatewari conocimiento materia
+```
+
+Procesa lo que haya en `01_MATERIA` que no se haya procesado antes (por su
+huella SHA-256). Y, cuando haga falta:
+
+```bash
+python -m tatewari conocimiento actualizar
+```
+
+```bash
+python -m tatewari conocimiento validar
+```
+
+```bash
+python -m tatewari conocimiento reporte
+```
+
+```bash
+python -m tatewari conocimiento buscar "horizonte"
+```
+
+```bash
+python -m tatewari conocimiento habilidades
+```
+
+### Pedirlo en español
+
+```bash
+python -m tatewari pedir "procesa este documento apuntes.pdf"
+```
+
+Entiende «procesa este documento …», «analiza la materia», «crea la base de
+conocimiento», «actualiza el conocimiento existente», «muestra los conceptos
+detectados», «muestra los conflictos» y «genera el reporte». Es un intérprete de
+palabras clave, no un modelo: lo que no entiende lo dice.
+
+### ZEA MAYZ: divulgación desde lo aprobado
+
+```bash
+python -m tatewari zea-mayz divulgar --tema "el suelo" --publico "lectores de 10 a 14 años"
+```
+
+Escribe guion (`05_GUION`), storyboard (`06_STORYBOARD`) y especificaciones de
+ilustración (`08_ILUSTRACIONES`) **solo** con conceptos `APPROVED`, y valida que
+cada afirmación, recuadro científico y cifra tenga base aprobada. Tras editar el
+borrador a mano:
+
+```bash
+python -m tatewari zea-mayz validar "05_GUION/Guion - Mi borrador.md"
+```
+
+---
+
 ## Todos los subcomandos
 
 | Orden | Qué hace | ¿Red? | ¿Escribe? |
@@ -285,6 +496,26 @@ lectura**: no escribe nada.
 | `ordenar REVISIÓN --pregunta TEXTO` | ordena por cercanía a la pregunta | local | caché |
 | `similares REVISIÓN ID` | los más parecidos a uno dado | local | caché |
 | `casi-duplicados REVISIÓN` | pares que la deduplicación no atrapó | local | sí |
+| `biblioteca importar [REVISIÓN]` | vuelca revisiones en el acervo | no | sí |
+| `biblioteca buscar [TEXTO]` | busca en todo el acervo | no | no |
+| `biblioteca resumen` | cuánto hay acumulado | no | no |
+| `biblioteca reconstruir` | rehace el acervo desde la evidencia | no | sí |
+| `conocimiento crear-vault` | crea la estructura del Vault de Obsidian | no | sí |
+| `conocimiento procesar DOCUMENTO` | documento → notas enlazadas en el Vault | local | sí |
+| `conocimiento materia [CARPETA]` | procesa los documentos nuevos de una carpeta | local | sí |
+| `conocimiento actualizar` | rehace enlaces e índice, sin modelo | no | sí |
+| `conocimiento conceptos` | lista conceptos con tipo y estado | no | no |
+| `conocimiento conflictos` | lo que dos fuentes dicen distinto | no | no |
+| `conocimiento reporte` | valida el Vault y deja un reporte | no | sí |
+| `conocimiento validar` | valida el Vault | no | no |
+| `conocimiento buscar TEXTO` | busca notas por contenido | no | no |
+| `conocimiento estado NOTA ESTADO --autor …` | DRAFT, REVIEW, APPROVED, PUBLISHED | no | sí |
+| `conocimiento habilidades` | las habilidades del orquestador | no | no |
+| `conocimiento modelos` | qué modelo hace cada tarea | local | no |
+| `pedir PETICIÓN` | lo mismo, pedido en español | según | según |
+| `zea-mayz divulgar` | borrador narrativo desde conceptos aprobados | local | sí |
+| `zea-mayz validar BORRADOR` | comprueba la base aprobada de un borrador | no | no |
+| `interfaz` | la interfaz gráfica en el navegador, solo en esta máquina | local | según |
 
 «local» quiere decir que habla con Ollama en `localhost`, nunca con la nube.
 «caché» quiere decir que solo escribe `vectores.json`, que es desechable.
@@ -298,7 +529,8 @@ python -m tatewari cribar --help
 Códigos de salida: `0` correcto, `1` protocolo inválido, `2` archivo no
 encontrado, `3` problema de configuración, `4` la cosecha no pudo arrancar,
 `5` el cribado no pudo arrancar, `6` el modelo local no se pudo usar, `7` los
-embeddings no se pudieron calcular.
+embeddings no se pudieron calcular, `8` Knowledge Studio no pudo completar la
+orden (documento ilegible, Vault sin configurar, validación con errores).
 
 ---
 
@@ -324,7 +556,15 @@ embeddings no se pudieron calcular.
   duplicados que la deduplicación no atrapó.
 - Exportación a BibTeX y a fichas en Markdown, con la lista de lo que hay que
   pedir a la biblioteca.
+- Biblioteca acumulativa en SQLite para consultar varias revisiones juntas.
 - Lanzador de Windows con acceso directo en el Escritorio.
+- **Knowledge Studio**: documentos académicos (PDF, DOCX, PPTX, TXT, Markdown)
+  a notas de Obsidian enlazadas, con trazabilidad a página, diapositiva o
+  sección, citas comprobadas, estados de revisión y conflictos entre fuentes.
+- **ZEA MAYZ**: borradores de divulgación solo desde conceptos aprobados, con
+  validación de cada afirmación.
+- **Interfaz gráfica** local de tres paneles, al estilo de un gestor de
+  referencias, que carga el modelo al abrirse.
 
 ---
 
@@ -337,6 +577,9 @@ Copia `.env.example` a `.env` y ajústalo. El `.env` no se versiona.
 | `TATEWARI_MAILTO` | *(vacío)* | Correo de contacto para las APIs académicas |
 | `TATEWARI_OLLAMA` | `http://localhost:11434` | Ollama local, el único modelo del proyecto |
 | `TATEWARI_DATOS` | `./revisiones` | Carpeta de salida (no se versiona) |
+| `TATEWARI_OBSIDIAN_VAULT` | *(vacío)* | Vault de Obsidian de Knowledge Studio |
+| `TATEWARI_MODELO_EXTRACCION` | *(automático)* | Modelo que lee los documentos |
+| `TATEWARI_MODELO_SINTESIS` | *(el de extracción)* | Modelo de la divulgación |
 
 Precedencia, de menor a mayor: valores por defecto → `.env` → variables de
 entorno reales. Así, un `set TATEWARI_OLLAMA=...` en la consola manda sobre el
@@ -378,6 +621,11 @@ src/tatewari/
   embeddings.py           Vectores locales, caché y búsqueda por parecido
   texto_completo.py       Unpaywall: la versión abierta legal de cada DOI
   exportar.py             BibTeX y fichas en Markdown
+  biblioteca.py           Acervo acumulativo en SQLite
+  cli_conocimiento.py     Órdenes conocimiento, pedir y zea-mayz
+  conocimiento/           Knowledge Studio (ver docs/KNOWLEDGE_STUDIO.md)
+  zea_mayz/               Divulgación desde conocimiento aprobado
+  interfaz/               La interfaz gráfica local (servidor y página)
   fuentes/
     openalex.py           Fuente primaria
     crossref.py           Fuente secundaria
@@ -387,6 +635,8 @@ src/tatewari/
 protocolos/humedales.json Protocolo real de ejemplo
 fixtures/demo.json        14 registros sintéticos para las pruebas
 tests/                    pytest, sin red
+tests/fixtures/           Documentos ficticios de ejemplo para Knowledge Studio
+docs/                     Arquitectura, hoja de ruta, Knowledge Studio, ZEA MAYZ
 scripts/windows/          Lanzador .bat y creador de acceso directo
 tests/respuestas/         Respuestas de las APIs: documentadas y capturas reales
 ```

@@ -18,12 +18,29 @@ dependencies = [
 dev = [
     "pytest>=8.0",
 ]
+# Knowledge Studio: lectura de PDF. DOCX, PPTX, TXT y Markdown no necesitan
+# nada: se leen con la biblioteca estandar.
+documentos = [
+    "pymupdf>=1.24",
+]
 
 [project.scripts]
 tatewari = "tatewari.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+# `biblioteca.py` lee `esquema.sql` en ejecucion. Sin declararlo aqui, una
+# instalacion normal (no editable) no lo copia y la biblioteca falla al abrirse
+# con un "No se pudo leer el esquema". Con `pip install -e .` no se nota, porque
+# lee del arbol de fuentes: es de los fallos que solo aparecen al instalar de
+# verdad, en otra maquina.
+[tool.setuptools.package-data]
+tatewari = ["*.sql"]
+# Las plantillas de las notas de Knowledge Studio se leen en ejecucion.
+"tatewari.conocimiento" = ["plantillas/*.md"]
+# La pagina de la interfaz local: se sirve desde el paquete, sin internet.
+"tatewari.interfaz" = ["estatico/*.html", "estatico/*.css", "estatico/*.js"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

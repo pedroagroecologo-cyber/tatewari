@@ -129,3 +129,17 @@ def test_el_env_de_ejemplo_trae_las_tres_variables(raiz):
     assert set(valores) == set(PREDETERMINADOS)
     assert "@" in valores["TATEWARI_MAILTO"]
     assert valores["TATEWARI_OLLAMA"] == "http://localhost:11434"
+
+
+def test_la_clave_de_openalex_solo_se_ofrece_a_openalex(tmp_path):
+    config = cargar_config(entorno={"TATEWARI_OPENALEX_KEY": "CLAVE"}, base=tmp_path)
+
+    assert config.credenciales_http() == {"api.openalex.org": "CLAVE"}
+    assert "CLAVE" not in repr(config)
+    assert "CLAVE" not in config.resumen()
+
+
+def test_sin_clave_no_hay_credenciales(tmp_path):
+    config = cargar_config(entorno={}, base=tmp_path)
+
+    assert config.credenciales_http() == {}

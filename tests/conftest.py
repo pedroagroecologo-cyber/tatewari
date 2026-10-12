@@ -322,6 +322,45 @@ def ollama():
 
 
 @pytest.fixture
+def vault_ks(tmp_path):
+    """Un Vault de Obsidian vacío con la estructura por defecto, y su jaula.
+
+    Devuelve `(vault, jaula)`. La jaula solo autoriza el Vault: cualquier
+    escritura fuera de él en una prueba es un fallo de la prueba.
+    """
+    from tatewari.conocimiento.rutas import Jaula
+    from tatewari.conocimiento.vault import Vault
+
+    raiz = tmp_path / "Vault ZEA MAYZ"
+    vault = Vault.cargar(raiz, crear=True)
+    jaula = Jaula.para(raiz)
+    vault.crear_estructura(jaula)
+    return vault, jaula
+
+
+@pytest.fixture
+def orquestador_ks(vault_ks, ollama):
+    """Fábrica de orquestadores con un Ollama falso: `orquestador_ks([respuesta, …])`.
+
+    Devuelve `(orquestador, sesion)`. Sin Ollama instalado y sin red.
+    """
+    from tatewari.conocimiento.enrutador import Enrutador
+    from tatewari.conocimiento.orquestador import Orquestador
+
+    vault, jaula = vault_ks
+
+    def fabrica(respuestas: list[Any] | None = None, sin_modelo: bool = False, **extra: Any):
+        cliente, sesion = ollama(modelos=[modelo_falso("qwen3:4b", "4.0B")], respuestas=respuestas, **extra)
+        enrutador = Enrutador.con_clientes({"extraccion": cliente, "sintesis": cliente})
+        return (
+            Orquestador(vault=vault, jaula=jaula, enrutador=enrutador, sin_modelo=sin_modelo),
+            sesion,
+        )
+
+    return fabrica
+
+
+@pytest.fixture
 def embeddings(ollama):
     """Fábrica de `ClienteEmbeddings` contra un Ollama falso.
 

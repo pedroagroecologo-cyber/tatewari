@@ -39,7 +39,9 @@ def test_todo_open_lleva_encoding_explicito(ruta):
     llamada suele ir partida en varias líneas.
     """
     texto = _leer(ruta)
-    for encontrado in re.finditer(r"\bopen\(", texto):
+    # `(?<!\.)`: el `open` de Python, no el método de otra librería
+    # (`pymupdf.open`, `zipfile.ZipFile.open`), que no abre texto.
+    for encontrado in re.finditer(r"(?<![.\w])open\(", texto):
         inicio = encontrado.end()
         profundidad = 1
         indice = inicio
@@ -50,6 +52,10 @@ def test_todo_open_lleva_encoding_explicito(ruta):
                 profundidad -= 1
             indice += 1
         llamada = texto[inicio : indice - 1]
+        # En modo binario Python no admite `encoding` (lanza ValueError): la
+        # regla 8 va de archivos de texto.
+        if re.search(r"""["'][rwax+]*b[rwax+]*["']""", llamada):
+            continue
         assert "encoding=" in llamada, (
             f"{ruta.name}: un open() sin encoding=\"utf-8\" "
             f"(AGENTS.md, regla 8): open({llamada[:80]}…"
@@ -107,6 +113,10 @@ def test_no_se_llama_a_ningun_modelo_en_la_nube(ruta):
         "github.com",
         "ollama.com",
         "www.python.org",
+        # Espacios de nombres XML de DOCX y PPTX: son identificadores escritos
+        # dentro del formato, no direcciones que se consulten.
+        "schemas.openxmlformats.org",
+        "purl.org",
     }
     ajenas = sorted(set(urls) - permitidos)
     assert not ajenas, f"{ruta.name}: URL de un servicio no autorizado: {ajenas}"
@@ -143,7 +153,9 @@ def test_los_datos_que_el_paquete_lee_en_ejecucion_estan_declarados():
     pyproject = _leer(RAIZ / "pyproject.toml")
 
     for sufijo in datos:
-        assert f'"*{sufijo}"' in pyproject, (
+        # Vale «"*.sql"» y también «"plantillas/*.md"»: lo que importa es que el
+        # patrón que cubre esa extensión esté declarado.
+        assert f'*{sufijo}"' in pyproject, (
             f"el paquete trae archivos {sufijo} que pyproject.toml no declara "
             f"en [tool.setuptools.package-data]"
         )
@@ -236,7 +248,7 @@ def test_estan_los_dos_scripts_de_windows():
 
 
 @pytest.mark.parametrize(
-    "nombre", ["tatewari.bat", "crear-acceso-directo.ps1"]
+    "nombre", ["tatewari.bat", "tatewari-interfaz.bat", "crear-acceso-directo.ps1"]
 )
 def test_los_scripts_de_windows_van_en_crlf(nombre):
     """cmd.exe se rompe con un bloque `if` en finales de línea de Unix.
@@ -270,11 +282,26 @@ def test_el_lanzador_comprueba_python_crea_el_entorno_e_instala():
     assert "cmd /k" in bat
 
 
-def test_el_lanzador_no_lleva_acentos():
+@pytest.mark.parametrize("nombre", ["tatewari.bat", "tatewari-interfaz.bat"])
+def test_el_lanzador_no_lleva_acentos(nombre):
     """La consola de Windows arranca con la página de códigos local."""
-    bat = (SCRIPTS / "tatewari.bat").read_bytes()
+    bat = (SCRIPTS / nombre).read_bytes()
 
     assert bat.decode("ascii")
+
+
+def test_el_lanzador_de_la_interfaz_abre_la_interfaz_y_espera_a_ollama():
+    bat = _leer(SCRIPTS / "tatewari-interfaz.bat")
+
+    assert "-m tatewari interfaz --esperar-ollama" in bat
+    # Sin entorno no intenta nada: manda a abrir antes el lanzador de siempre.
+    assert "tatewari.bat" in bat
+
+
+def test_el_creador_de_accesos_directos_crea_tambien_el_de_la_interfaz():
+    ps1 = _leer(SCRIPTS / "crear-acceso-directo.ps1")
+
+    assert "tatewari-interfaz.bat" in ps1
 
 
 def test_el_acceso_directo_usa_la_raiz_como_carpeta_de_trabajo():

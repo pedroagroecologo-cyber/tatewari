@@ -61,6 +61,8 @@ __all__ = [
     "DIRECCION_POR_DEFECTO",
     "RUTA_TAGS",
     "RUTA_GENERAR",
+    "RUTA_PS",
+    "MANTENER_EN_MEMORIA",
     "NUM_CTX",
     "TEMPERATURA",
     "TIEMPO_ESPERA_TAGS",
@@ -81,6 +83,11 @@ __all__ = [
 DIRECCION_POR_DEFECTO = "http://localhost:11434"
 RUTA_TAGS = "/api/tags"
 RUTA_GENERAR = "/api/generate"
+RUTA_PS = "/api/ps"
+
+#: Cuánto deja Ollama un modelo precargado en la tarjeta sin usarlo. Por defecto
+#: Ollama lo descarga a los 5 minutos; con la interfaz abierta se quiere a mano.
+MANTENER_EN_MEMORIA = "30m"
 
 #: Ventana de contexto, **explícita**. Si no se manda, Ollama usa la que traiga
 #: el Modelfile del modelo, que cambia de un modelo a otro: el mismo prompt
@@ -513,6 +520,55 @@ class ClienteOllama:
             if modelo.nombre == nombre:
                 return modelo
         return ModeloInstalado(nombre=nombre)
+
+    def en_memoria(self) -> tuple[str, ...]:
+        """Los modelos que Ollama tiene cargados ahora mismo (`/api/ps`).
+
+        Solo informa: si Ollama es viejo y no tiene esa ruta, o no responde,
+        devuelve una tupla vacía en vez de fallar.
+        """
+        try:
+            datos = self.cliente.obtener_json(
+                f"{self.direccion}{RUTA_PS}", tiempo_espera=self.tiempo_espera_tags
+            )
+        except ErrorHttp:
+            return ()
+        modelos = datos.get("models") if isinstance(datos, dict) else None
+        if not isinstance(modelos, list):
+            return ()
+        return tuple(
+            str(m.get("name") or m.get("model"))
+            for m in modelos
+            if isinstance(m, dict) and (m.get("name") or m.get("model"))
+        )
+
+    def precargar(self, mantener: str = MANTENER_EN_MEMORIA) -> str:
+        """Carga el modelo en la tarjeta sin generar nada, y lo deja ahí `mantener`.
+
+        Es lo que documenta Ollama para precargar: una petición a `/api/generate`
+        con el prompt vacío. Se pide con el mismo `num_ctx` que las generaciones
+        de verdad; con otro, Ollama volvería a cargarlo en la primera petición.
+        Devuelve el nombre del modelo cargado.
+        """
+        nombre = self.elegir()
+        cuerpo: dict[str, Any] = {
+            "model": nombre,
+            "prompt": "",
+            "stream": False,
+            "keep_alive": mantener,
+            "options": {"num_ctx": self.num_ctx},
+        }
+        try:
+            self.cliente.enviar_json(
+                self.url_generar, cuerpo, tiempo_espera=self.tiempo_espera_generar
+            )
+        except ErrorRed as error:
+            raise OllamaNoResponde(
+                _mensaje_no_responde(self.direccion, str(error))
+            ) from error
+        except ErrorHttp as error:
+            raise ErrorOllama(f"Ollama no pudo cargar «{nombre}»: {error}") from error
+        return nombre
 
     # -- Generación --------------------------------------------------------
 

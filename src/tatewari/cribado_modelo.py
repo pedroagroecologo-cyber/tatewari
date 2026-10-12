@@ -72,6 +72,7 @@ __all__ = [
     "ResultadoModelo",
     "construir_prompt",
     "extraer_json",
+    "extraer_json_si",
     "interpretar",
     "sin_razonamiento",
     "recortar",
@@ -305,8 +306,25 @@ def extraer_json(texto: str) -> dict[str, Any] | None:
     no es JSON. Se prueban todos los candidatos hasta encontrar uno que sirva, y
     da igual que venga envuelto en ```json o en un párrafo de explicación.
     """
+    return extraer_json_si(
+        texto, lambda candidato: _clave_de(candidato, _CLAVES_DECISION) is not None
+    )
+
+
+def extraer_json_si(
+    texto: str, acepta: Callable[[dict[str, Any]], bool]
+) -> dict[str, Any] | None:
+    """El primer objeto JSON equilibrado del texto que `acepta` da por bueno.
+
+    Es la maquinaria de `extraer_json` sin atarla a la clave «decision», para
+    que la reutilicen otros módulos (Knowledge Studio, la divulgación) en vez de
+    copiarla. Quita antes los bloques de razonamiento, por la misma razón que
+    `interpretar`: el borrador de un modelo que piensa en voz alta no es su
+    conclusión.
+    """
     if not texto:
         return None
+    texto = sin_razonamiento(texto)
 
     posicion = texto.find("{")
     while posicion != -1:
@@ -316,9 +334,7 @@ def extraer_json(texto: str) -> dict[str, Any] | None:
                 candidato = json.loads(texto[posicion:fin])
             except (ValueError, TypeError):
                 candidato = None
-            if isinstance(candidato, dict) and _clave_de(
-                candidato, _CLAVES_DECISION
-            ):
+            if isinstance(candidato, dict) and acepta(candidato):
                 return candidato
         posicion = texto.find("{", posicion + 1)
     return None

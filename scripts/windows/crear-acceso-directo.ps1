@@ -1,9 +1,14 @@
 # ===================================================================
-#  Tatewari - crea el acceso directo en el Escritorio
+#  Tatewari - crea los accesos directos en el Escritorio
 #
-#  Apunta a scripts\windows\tatewari.bat y deja como carpeta de
-#  trabajo la raiz del proyecto, que es lo que hace que las rutas
-#  relativas de las ordenes (protocolos\humedales.json) funcionen.
+#  Dos accesos directos:
+#    Tatewari            -> scripts\windows\tatewari.bat (la consola)
+#    Tatewari - interfaz -> scripts\windows\tatewari-interfaz.bat
+#                           (la interfaz grafica en el navegador)
+#
+#  Los dos dejan como carpeta de trabajo la raiz del proyecto, que es lo
+#  que hace que las rutas relativas de las ordenes
+#  (protocolos\humedales.json) funcionen.
 #
 #  Uso, desde esta carpeta:
 #    powershell -ExecutionPolicy Bypass -File .\crear-acceso-directo.ps1
@@ -22,15 +27,6 @@ if (-not $carpetaScript) {
 }
 
 $raiz = (Resolve-Path (Join-Path $carpetaScript '..\..')).Path
-$lanzador = Join-Path $carpetaScript 'tatewari.bat'
-
-if (-not (Test-Path -LiteralPath $lanzador)) {
-    Write-Host ''
-    Write-Host 'ERROR: no se encuentra tatewari.bat junto a este script.' -ForegroundColor Red
-    Write-Host "       Se buscaba en: $lanzador"
-    Write-Host '       Los dos archivos tienen que estar en scripts\windows\.'
-    exit 1
-}
 
 # El Escritorio se pregunta al sistema y no se compone a mano: con
 # OneDrive activado no esta en %USERPROFILE%\Desktop.
@@ -41,46 +37,63 @@ if (-not $escritorio -or -not (Test-Path -LiteralPath $escritorio)) {
     exit 1
 }
 
-$destino = Join-Path $escritorio 'Tatewari.lnk'
+function Crear-Atajo {
+    param([string]$nombre, [string]$lanzador, [string]$descripcion)
 
-# --- El acceso directo -----------------------------------------------
-if (Test-Path -LiteralPath $destino) {
-    Write-Host "Ya existe un acceso directo en: $destino"
-    $respuesta = Read-Host 'Se va a reemplazar. Continuar? (s/N)'
-    if ($respuesta -notmatch '^[sS]') {
-        Write-Host 'Cancelado. No se ha tocado nada.'
-        exit 0
+    if (-not (Test-Path -LiteralPath $lanzador)) {
+        Write-Host ''
+        Write-Host "ERROR: no se encuentra $lanzador junto a este script." -ForegroundColor Red
+        Write-Host '       Los archivos tienen que estar en scripts\windows\.'
+        return $false
     }
+
+    $destino = Join-Path $escritorio "$nombre.lnk"
+    if (Test-Path -LiteralPath $destino) {
+        Write-Host "Ya existe un acceso directo en: $destino"
+        $respuesta = Read-Host 'Se va a reemplazar. Continuar? (s/N)'
+        if ($respuesta -notmatch '^[sS]') {
+            Write-Host 'No se ha tocado.'
+            return $true
+        }
+    }
+
+    try {
+        $shell = New-Object -ComObject WScript.Shell
+        $atajo = $shell.CreateShortcut($destino)
+        $atajo.TargetPath = $lanzador
+        # La carpeta de trabajo es la raiz del proyecto: sin esto, las
+        # rutas relativas de las ordenes no encuentran nada.
+        $atajo.WorkingDirectory = $raiz
+        $atajo.Description = $descripcion
+        $atajo.IconLocation = "$env:SystemRoot\System32\cmd.exe,0"
+        $atajo.Save()
+    }
+    catch {
+        Write-Host ''
+        Write-Host "ERROR: no se pudo crear el acceso directo $nombre." -ForegroundColor Red
+        Write-Host "       $($_.Exception.Message)"
+        Write-Host ''
+        Write-Host 'Puedes crearlo a mano: clic derecho en el Escritorio,'
+        Write-Host 'Nuevo > Acceso directo, y pega esta ruta:'
+        Write-Host "  $lanzador"
+        return $false
+    }
+
+    Write-Host ''
+    Write-Host "Acceso directo creado: $nombre" -ForegroundColor Green
+    Write-Host "  Escritorio        : $destino"
+    Write-Host "  Abre              : $lanzador"
+    Write-Host "  Carpeta de trabajo: $raiz"
+    return $true
 }
 
-try {
-    $shell = New-Object -ComObject WScript.Shell
-    $atajo = $shell.CreateShortcut($destino)
-    $atajo.TargetPath = $lanzador
-    # La carpeta de trabajo es la raiz del proyecto: sin esto, las
-    # rutas relativas de las ordenes no encuentran nada.
-    $atajo.WorkingDirectory = $raiz
-    $atajo.Description = 'Tatewari - agente local de revision sistematica de literatura'
-    $atajo.IconLocation = "$env:SystemRoot\System32\cmd.exe,0"
-    $atajo.Save()
-}
-catch {
-    Write-Host ''
-    Write-Host 'ERROR: no se pudo crear el acceso directo.' -ForegroundColor Red
-    Write-Host "       $($_.Exception.Message)"
-    Write-Host ''
-    Write-Host 'Puedes crearlo a mano: clic derecho en el Escritorio,'
-    Write-Host 'Nuevo > Acceso directo, y pega esta ruta:'
-    Write-Host "  $lanzador"
-    exit 1
-}
+$consola = Crear-Atajo 'Tatewari' (Join-Path $carpetaScript 'tatewari.bat') 'Tatewari - agente local de revision sistematica de literatura'
+$interfaz = Crear-Atajo 'Tatewari - interfaz' (Join-Path $carpetaScript 'tatewari-interfaz.bat') 'Tatewari - interfaz grafica en el navegador'
 
 Write-Host ''
-Write-Host 'Acceso directo creado.' -ForegroundColor Green
-Write-Host "  Escritorio      : $destino"
-Write-Host "  Abre            : $lanzador"
-Write-Host "  Carpeta de trabajo: $raiz"
+Write-Host 'La primera vez, abre "Tatewari" (la consola): crea el entorno'
+Write-Host 'virtual e instala las dependencias. Despues, "Tatewari - interfaz"'
+Write-Host 'abre la interfaz grafica y carga el modelo local.'
 Write-Host ''
-Write-Host 'La primera vez que lo abras, creara el entorno virtual e'
-Write-Host 'instalara las dependencias. Puede tardar un par de minutos.'
-Write-Host ''
+
+if (-not ($consola -and $interfaz)) { exit 1 }

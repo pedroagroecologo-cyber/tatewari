@@ -17,16 +17,24 @@ Variables reconocidas:
 - `TATEWARI_MAILTO`: correo de contacto para las APIs academicas. Unpaywall lo
   **exige**; OpenAlex y Crossref lo usan para meter las peticiones en su cola
   educada (mas rapida y con menos cortes).
+- `TATEWARI_OPENALEX_KEY`: clave gratuita de OpenAlex (openalex.org/settings/api).
+  Multiplica por diez el presupuesto diario de consultas. Opcional. Viaja en la
+  cabecera `Authorization` y nunca en la URL, para que no quede escrita en la
+  bitacora de busquedas.
 - `TATEWARI_OLLAMA`: direccion del Ollama local. Por defecto
   `http://localhost:11434`.
 - `TATEWARI_DATOS`: carpeta de salida de las revisiones. Por defecto
   `./revisiones`.
+- `TATEWARI_OBSIDIAN_VAULT`: el Vault de Obsidian donde Knowledge Studio escribe
+  las notas. Sin el, las ordenes de `conocimiento` piden `--vault`.
+- `TATEWARI_MODELO_EXTRACCION` y `TATEWARI_MODELO_SINTESIS`: modelos de Ollama
+  por tarea. Vacios, Tatewari elige el que entra en la tarjeta.
 """
 
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 __all__ = [
@@ -40,11 +48,16 @@ __all__ = [
 ]
 
 NOMBRE_ARCHIVO_ENV = ".env"
+HOST_OPENALEX = "api.openalex.org"
 
 PREDETERMINADOS: dict[str, str] = {
     "TATEWARI_MAILTO": "",
+    "TATEWARI_OPENALEX_KEY": "",
     "TATEWARI_OLLAMA": "http://localhost:11434",
     "TATEWARI_DATOS": "./revisiones",
+    "TATEWARI_OBSIDIAN_VAULT": "",
+    "TATEWARI_MODELO_EXTRACCION": "",
+    "TATEWARI_MODELO_SINTESIS": "",
 }
 
 
@@ -116,6 +129,23 @@ class Config:
     ollama: str
     datos: Path
     origen_env: Path | None = None
+    #: Vault de Obsidian de Knowledge Studio. `None` si no esta configurado.
+    vault: Path | None = None
+    #: Modelos forzados por tarea. Vacio = eleccion automatica para 4 GB de VRAM.
+    modelo_extraccion: str = ""
+    modelo_sintesis: str = ""
+    #: Clave de OpenAlex. Vacia = cola sin clave, con el presupuesto minimo.
+    openalex_key: str = field(default="", repr=False)
+
+    def credenciales_http(self) -> dict[str, str]:
+        """Token por servidor, para `ClienteHttp(credenciales=...)`.
+
+        La clave solo se entrega a OpenAlex: Crossref, Unpaywall y Ollama no
+        la reciben nunca.
+        """
+        if not self.openalex_key:
+            return {}
+        return {HOST_OPENALEX: self.openalex_key}
 
     @property
     def tiene_mailto(self) -> bool:
@@ -145,11 +175,14 @@ class Config:
         """Resumen legible de la configuracion, para la CLI."""
         origen = str(self.origen_env) if self.origen_env else "(sin archivo .env)"
         correo = self.mailto if self.tiene_mailto else "(sin configurar)"
+        clave = "con clave" if self.openalex_key else "sin clave"
         return (
             f"Archivo .env : {origen}\n"
             f"Correo       : {correo}\n"
+            f"OpenAlex     : {clave}\n"
             f"Ollama       : {self.ollama}\n"
-            f"Datos        : {self.datos}"
+            f"Datos        : {self.datos}\n"
+            f"Vault        : {self.vault or '(sin configurar)'}"
         )
 
 
@@ -185,9 +218,20 @@ def cargar_config(
     if not datos.is_absolute():
         datos = base / datos
 
+    vault = None
+    if valores["TATEWARI_OBSIDIAN_VAULT"].strip():
+        vault = Path(valores["TATEWARI_OBSIDIAN_VAULT"].strip()).expanduser()
+        if not vault.is_absolute():
+            vault = base / vault
+        vault = Path(os.path.normpath(vault))
+
     return Config(
         mailto=valores["TATEWARI_MAILTO"].strip(),
+        openalex_key=valores["TATEWARI_OPENALEX_KEY"].strip(),
         ollama=valores["TATEWARI_OLLAMA"].strip().rstrip("/"),
         datos=Path(os.path.normpath(datos)),
         origen_env=archivo,
+        vault=vault,
+        modelo_extraccion=valores["TATEWARI_MODELO_EXTRACCION"].strip(),
+        modelo_sintesis=valores["TATEWARI_MODELO_SINTESIS"].strip(),
     )

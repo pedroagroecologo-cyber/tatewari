@@ -1,0 +1,103 @@
+{
+  "titulo": "Biosíntesis de nanopartículas de plata con microalgas en el tratamiento de aguas residuales",
+  "ventana": [2016, 2026],
+  "idiomas": ["es", "en"],
+  "tipos": ["article", "review"],
+
+  "bloques": {
+    "P1_microalgas": [
+      "microalgas",
+      "microalga",
+      "fotobiorreactor",
+      "Chlorella",
+      "Scenedesmus",
+      "microalgae",
+      "photobioreactor",
+      "algal biomass"
+    ],
+    "P2_plata": [
+      "nanopartículas de plata",
+      "plata",
+      "silver nanoparticles",
+      "AgNPs",
+      "silver",
+      "Ag+"
+    ],
+    "P3_sintesis": [
+      "biosíntesis",
+      "síntesis verde",
+      "biorreducción",
+      "biosynthesis",
+      "green synthesis",
+      "biogenic",
+      "bioreduction",
+      "biosorption"
+    ],
+    "P4_agua_residual": [
+      "agua residual",
+      "aguas residuales",
+      "wastewater",
+      "effluent",
+      "anaerobic digestate",
+      "digestate",
+      "anaerobic"
+    ]
+  },
+
+  "exclusion": [],
+
+  "grupos": {
+    "G_toxicidad": [
+      "toxicidad",
+      "ecotoxicidad",
+      "toxicity",
+      "ecotoxicity",
+      "oxidative stress"
+    ]
+  },
+
+  "clasificacion": [
+    {
+      "etiqueta": "Biosíntesis de AgNPs con microalgas",
+      "todos": ["P1_microalgas", "P2_plata", "P3_sintesis"]
+    },
+    {
+      "etiqueta": "Microalgas en agua residual con plata",
+      "todos": ["P1_microalgas", "P2_plata", "P4_agua_residual"]
+    },
+    {
+      "etiqueta": "Toxicidad de la plata sobre microalgas",
+      "todos": ["P1_microalgas", "P2_plata", "G_toxicidad"]
+    }
+  ],
+
+  "consulta": {
+    "eje": "P1_microalgas",
+    "cruce": ["silver nanoparticles", "silver"]
+  },
+
+  "reglas": {
+    "sinResumen": "dudoso",
+    "incluir": [
+      {
+        "todos": ["P1_microalgas", "P2_plata", "P3_sintesis"],
+        "motivo": "Microalgas que forman o recuperan plata: es el núcleo de la tesis."
+      },
+      {
+        "todos": ["P1_microalgas", "P2_plata", "P4_agua_residual"],
+        "motivo": "Microalgas expuestas a plata en agua residual o digestato: contexto directo del reactor."
+      }
+    ],
+    "dudoso": [
+      {
+        "todos": ["P1_microalgas", "P2_plata"],
+        "motivo": "Microalgas y plata sin síntesis ni agua residual claras (p. ej., solo toxicidad); lo decide una persona."
+      },
+      {
+        "todos": ["P2_plata", "P3_sintesis"],
+        "ninguno": ["P1_microalgas"],
+        "motivo": "Síntesis biológica de plata con otro organismo; puede servir de comparación."
+      }
+    ]
+  }
+}

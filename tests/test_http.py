@@ -234,3 +234,34 @@ def test_la_cuota_tambien_se_lee_de_una_respuesta_de_error():
     cliente.obtener_json(URL)
 
     assert cliente.cuota.restante == 950
+
+
+class SesionQueAnotaCabeceras(SesionFalsa):
+    """Como `SesionFalsa`, pero guarda las cabeceras de cada petición."""
+
+    def __init__(self, respuestas):
+        super().__init__(respuestas)
+        self.cabeceras = []
+
+    def get(self, url, timeout=None, headers=None):
+        self.cabeceras.append(headers)
+        return super().get(url, timeout=timeout)
+
+
+def test_la_clave_viaja_en_la_cabecera_y_no_en_la_url():
+    sesion = SesionQueAnotaCabeceras([RespuestaFalsa(200)])
+    cliente = ClienteHttp(sesion=sesion, credenciales={"api.openalex.org": "CLAVE"})
+
+    cliente.obtener_json(URL)
+
+    assert sesion.cabeceras == [{"Authorization": "Bearer CLAVE"}]
+    assert "CLAVE" not in sesion.urls[0]
+
+
+def test_la_clave_no_se_entrega_a_otros_servidores():
+    sesion = SesionQueAnotaCabeceras([RespuestaFalsa(200)])
+    cliente = ClienteHttp(sesion=sesion, credenciales={"api.openalex.org": "CLAVE"})
+
+    cliente.obtener_json("https://api.crossref.org/works?query=x")
+
+    assert sesion.cabeceras == [None]

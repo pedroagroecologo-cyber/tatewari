@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tatewari</title>
+<link rel="stylesheet" href="/estatico/estilo.css">
+<script src="/estatico/app.js" defer></script>
+</head>
+<body>
+
+<header class="barra" role="toolbar" aria-label="Acciones">
+  <div class="marca"><span class="marca-punto" aria-hidden="true"></span>Tatewari</div>
+
+  <div class="acciones">
+    <button type="button" class="boton primario" id="b-anadir" title="Añadir documentos a la materia y procesarlos">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M2 8h12"/></svg><span class="texto">Añadir documento</span>
+    </button>
+    <button type="button" class="boton" id="b-materia" title="Procesar lo nuevo de 01_MATERIA">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h4l1.5 1.5H14V13H2z"/></svg><span class="texto">Analizar materia</span>
+    </button>
+    <button type="button" class="boton" id="b-divulgar" title="Borrador de divulgación con los conceptos aprobados">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13l2.5-.5L13 5l-2-2-7.5 7.5z"/></svg><span class="texto">Divulgar</span>
+    </button>
+    <button type="button" class="boton" id="b-validar" title="Revisar el Vault sin escribir nada">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg><span class="texto">Validar</span>
+    </button>
+  </div>
+
+  <label class="buscador">
+    <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>
+    <input type="search" id="buscar" placeholder="Buscar en esta colección" autocomplete="off" aria-label="Buscar en esta colección">
+  </label>
+
+  <button type="button" class="modelo" id="modelo" title="Estado del modelo local">
+    <span class="luz" id="modelo-luz" aria-hidden="true"></span>
+    <span id="modelo-texto">Consultando Ollama…</span>
+  </button>
+</header>
+
+<main class="paneles" id="paneles">
+  <nav class="panel arbol" id="arbol" aria-label="Colecciones"></nav>
+  <div class="separador" data-panel="arbol" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Ancho de las colecciones"></div>
+
+  <section class="panel lista" aria-label="Elementos">
+    <div class="lista-cabeza">
+      <h1 id="lista-titulo">Tatewari</h1>
+      <span id="lista-cuenta" class="cuenta"></span>
+    </div>
+    <div class="tabla-caja" id="tabla-caja">
+      <table class="tabla" id="tabla">
+        <thead><tr id="tabla-cabeza"></tr></thead>
+        <tbody id="tabla-cuerpo"></tbody>
+      </table>
+      <div class="vacio" id="lista-vacia"></div>
+    </div>
+  </section>
+
+  <div class="separador" data-panel="detalle" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Ancho de la ficha"></div>
+  <aside class="panel detalle" id="detalle" aria-label="Ficha del elemento"></aside>
+</main>
+
+<footer class="estado-barra" id="estado-barra">
+  <button type="button" class="actividad" id="actividad" aria-expanded="false" aria-controls="trabajos">
+    <span class="rueda" id="rueda" aria-hidden="true"></span>
+    <span id="actividad-texto">Sin trabajos en curso</span>
+  </button>
+  <span class="ruta" id="ruta-vault"></span>
+</footer>
+
+<section class="trabajos" id="trabajos" hidden aria-label="Trabajos">
+  <div class="trabajos-cabeza"><h2>Trabajos</h2><button type="button" class="boton chico" id="cerrar-trabajos">Cerrar</button></div>
+  <ol id="lista-trabajos"></ol>
+</section>
+
+<div class="soltar" id="soltar" hidden><div>Suelta aquí los documentos<br><small>PDF, DOCX, PPTX, TXT o Markdown</small></div></div>
+<div class="avisos" id="avisos" aria-live="polite"></div>
+
+<dialog id="dlg-anadir">
+  <form method="dialog" class="dialogo">
+    <h2>Añadir documentos</h2>
+    <p>Se copian a la materia del Vault y se procesan con el modelo local, uno detrás de otro. Las notas nacen en DRAFT o REVIEW.</p>
+    <label class="zona" for="archivos">
+      <strong>Elegir archivos</strong> o arrastrarlos a la ventana
+      <input type="file" id="archivos" multiple accept=".pdf,.docx,.pptx,.txt,.md">
+    </label>
+    <label for="ruta-doc">O la ruta de un documento de esta computadora</label>
+    <input type="text" id="ruta-doc" placeholder="C:/Users/tu/Documents/apuntes.pdf" autocomplete="off">
+    <div class="botones">
+      <button type="submit" value="cancelar" class="boton">Cancelar</button>
+      <button type="submit" value="ok" class="boton primario">Procesar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-decidir">
+  <form method="dialog" class="dialogo">
+    <h2 id="decidir-titulo">Decidir</h2>
+    <p id="decidir-registro" class="tenue"></p>
+    <fieldset class="opciones" id="decidir-opciones">
+      <legend>Decisión</legend>
+      <label><input type="radio" name="decision" value="incluir"> Incluir</label>
+      <label><input type="radio" name="decision" value="dudoso"> Dudoso</label>
+      <label><input type="radio" name="decision" value="excluir"> Excluir</label>
+    </fieldset>
+    <label for="decidir-motivo">Motivo <span class="tenue">(obligatorio: queda en decisiones.json)</span></label>
+    <textarea id="decidir-motivo" rows="3" required></textarea>
+    <label for="decidir-autor">Quién decide</label>
+    <input type="text" id="decidir-autor" autocomplete="off">
+    <div class="botones">
+      <button type="submit" value="cancelar" class="boton" formnovalidate>Cancelar</button>
+      <button type="submit" value="ok" class="boton primario">Guardar decisión</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-estado">
+  <form method="dialog" class="dialogo">
+    <h2 id="estado-titulo">Cambiar estado</h2>
+    <p id="estado-explicacion"></p>
+    <label for="estado-autor">Tu nombre</label>
+    <input type="text" id="estado-autor" autocomplete="off">
+    <div class="botones">
+      <button type="submit" value="cancelar" class="boton" formnovalidate>Cancelar</button>
+      <button type="submit" value="ok" class="boton primario" id="estado-ok">Cambiar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-vault">
+  <form method="dialog" class="dialogo">
+    <h2>Configurar el Vault de Obsidian</h2>
+    <p>La carpeta donde Tatewari escribe las notas. Si no existe, se crea con su estructura (00_INBOX … 09_LIBRO). Lo que ya haya dentro no se toca.</p>
+    <label for="vault-ruta">Ruta completa de la carpeta</label>
+    <input type="text" id="vault-ruta" placeholder="C:/Users/tu/Documents/ZEA MAYZ" autocomplete="off" required>
+    <label class="casilla"><input type="checkbox" id="vault-recordar" checked> Recordarla en el archivo .env</label>
+    <div class="botones">
+      <button type="submit" value="cancelar" class="boton" formnovalidate>Cancelar</button>
+      <button type="submit" value="ok" class="boton primario">Usar esta carpeta</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-divulgar">
+  <form method="dialog" class="dialogo">
+    <h2>Borrador de divulgación</h2>
+    <p>ZEA MAYZ escribe guion, storyboard y encargos de ilustración <strong>solo</strong> con conceptos APPROVED, y marca lo que no tenga base.</p>
+    <label for="divulgar-tema">Tema</label>
+    <input type="text" id="divulgar-tema" placeholder="el suelo" autocomplete="off">
+    <label for="divulgar-publico">Para quién</label>
+    <input type="text" id="divulgar-publico" value="lectores de 10 a 14 años" autocomplete="off">
+    <div class="botones">
+      <button type="submit" value="cancelar" class="boton">Cancelar</button>
+      <button type="submit" value="ok" class="boton primario">Escribir borrador</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-texto">
+  <form method="dialog" class="dialogo ancho">
+    <h2 id="texto-titulo"></h2>
+    <pre id="texto-cuerpo" class="consola"></pre>
+    <div class="botones"><button type="submit" class="boton primario">Cerrar</button></div>
+  </form>
+</dialog>
+
+</body>
+</html>
