@@ -22,3 +22,8 @@ revisiones/
 build/
 dist/
 .pytest_cache/
+
+# Libros con derechos de autor (p. ej., Sampieri): se consultan en local, nunca se versionan
+libros/
+*sampieri*.pdf
+*Sampieri*.pdf
