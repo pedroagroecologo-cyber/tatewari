@@ -131,8 +131,13 @@ def nota_markdown(
     revision: str,
     pdf: str | None = None,
     mis_notas: str | None = None,
+    resumen_pdf: Any = None,
 ) -> str:
-    """La nota de un incluido. `pdf` es el nombre del archivo en ``pdf/``."""
+    """La nota de un incluido.
+
+    `pdf` es el nombre del archivo en ``pdf/``; `resumen_pdf`, el `ResumenPdf`
+    con las frases clave copiadas de ese PDF, si se pudo leer.
+    """
     registro = decision.registro
     doi = _texto(registro.get("doi"))
     oa = _texto(registro.get("oa_url"))
@@ -180,6 +185,7 @@ def nota_markdown(
         _texto(registro.get("resumen")) if _texto(registro.get("resumen")) != NR
         else "_El registro no trae resumen (NR)._",
         "",
+        *_seccion_pdf(pdf, resumen_pdf),
         MARCA_MIS_NOTAS,
         "",
         mis_notas if mis_notas else TEXTO_INICIAL,
@@ -187,11 +193,38 @@ def nota_markdown(
     return "\n".join(propiedades + [""] + cuerpo) + "\n"
 
 
+def _seccion_pdf(pdf: str | None, resumen: Any) -> list[str]:
+    """«Lo que dice el PDF»: frases copiadas tal cual, con su página."""
+    if not pdf or resumen is None:
+        return []
+    lineas = [
+        "## Lo que dice el PDF",
+        "",
+        "_Frases copiadas tal cual del PDF, con su página. Tatewari no resume con "
+        "IA: escoge, no reescribe. Compruébalas en el original antes de citarlas._",
+        "",
+    ]
+    if resumen.conclusiones:
+        lineas += ["**Conclusiones de los autores**", ""]
+        lineas += [f"> {frase.cita()}\n" for frase in resumen.conclusiones]
+    if resumen.hallazgos:
+        lineas += ["**Resultados con números**", ""]
+        lineas += [f"- {frase.cita()}" for frase in resumen.hallazgos]
+        lineas.append("")
+    if resumen.vacio:
+        lineas += [f"_{aviso}_" for aviso in resumen.avisos] or [
+            "_No se encontraron conclusiones ni resultados con números._"
+        ]
+        lineas.append("")
+    return lineas
+
+
 @dataclass
 class ResultadoNotas:
     carpeta: Path
     escritas: int = 0
     con_pdf: int = 0
+    resumidas: int = 0
     conservadas: int = 0
     nombres: list[str] = field(default_factory=list)
 
@@ -222,9 +255,18 @@ def escribir_notas(
     decisiones: Iterable[Any],
     carpeta: Path | str,
     revision: str,
+    terminos: Iterable[str] = (),
 ) -> ResultadoNotas:
-    """Escribe una nota por decisión y el índice en ``carpeta/notas``."""
+    """Escribe una nota por decisión y el índice en ``carpeta/notas``.
+
+    `terminos` son los del protocolo: sirven para escoger, en cada PDF, las
+    frases con resultados que hablan del tema de la revisión.
+    """
+    from .resumen_pdf import pdf_legible, resumir_pdf
+
     carpeta = Path(carpeta)
+    terminos = list(terminos)
+    leer_pdf = pdf_legible()
     destino = carpeta / CARPETA_NOTAS
     destino.mkdir(parents=True, exist_ok=True)
     resultado = ResultadoNotas(carpeta=destino)
@@ -239,8 +281,14 @@ def escribir_notas(
         previas = mis_notas_de(ruta)
         if previas and previas.strip() != TEXTO_INICIAL:
             resultado.conservadas += 1
+        resumen = None
+        if pdf and leer_pdf:
+            resumen = resumir_pdf(carpeta / CARPETA_PDF / pdf, terminos)
+            resultado.resumidas += 0 if resumen.vacio else 1
         ruta.write_text(
-            nota_markdown(decision, revision, pdf, previas), encoding="utf-8", newline="\n"
+            nota_markdown(decision, revision, pdf, previas, resumen),
+            encoding="utf-8",
+            newline="\n",
         )
         resultado.escritas += 1
         resultado.con_pdf += 1 if pdf else 0

@@ -293,6 +293,13 @@ notas»**: lo que escribas debajo de ese título se conserva tal cual cada vez q
 vuelves a exportar. Si tu bóveda está ligada a `revisiones/` con un enlace
 simbólico, las notas aparecen solas en Obsidian.
 
+Si el PDF está en `pdf/` y PyMuPDF instalado (`pip install -e ".[documentos]"`),
+la nota trae además **«Lo que dice el PDF»**: las conclusiones de los autores y
+las frases con resultados numéricos que tocan términos de tu protocolo («2.9 MPa
+con 8 % de cemento…»), **copiadas tal cual y con su página**. Es un resumen
+extractivo: escoge, no reescribe, y no usa ningún modelo. Compruébalas en el
+original antes de citarlas.
+
 ### En cualquier momento: ¿por dónde iba?
 
 ```bash

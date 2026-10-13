@@ -590,8 +590,9 @@ class ResultadoExportacion:
             lineas.append("")
             lineas.append(
                 f"Notas de Obsidian: {self.notas.escritas} en {self.notas.carpeta} "
-                f"({self.notas.con_pdf} con su PDF; "
-                f"{self.notas.conservadas} con «Mis notas» conservadas)"
+                f"({self.notas.con_pdf} con su PDF, {self.notas.resumidas} con "
+                f"frases clave del PDF; {self.notas.conservadas} con «Mis notas» "
+                f"conservadas)"
             )
         return "\n".join(lineas)
 
@@ -652,5 +653,27 @@ def exportar(
     # archivos de arriba no cambian.
     from .notas import escribir_notas  # import local: notas importa descargas
 
-    salida.notas = escribir_notas(incluidos, carpeta, revision)
+    salida.notas = escribir_notas(
+        incluidos, carpeta, revision, _terminos_del_protocolo(resultado)
+    )
     return salida
+
+
+def _terminos_del_protocolo(resultado: Any) -> list[str]:
+    """Todos los términos del protocolo, para escoger frases en los PDF.
+
+    Si el protocolo no se puede leer, se devuelve vacío: las notas se escriben
+    igual, solo que el resumen del PDF escoge por cifras y no por tema.
+    """
+    from .protocolo import ErrorProtocolo, cargar_protocolo
+
+    ruta = getattr(resultado, "protocolo", NR)
+    if not ruta or ruta == NR:
+        return []
+    try:
+        protocolo = cargar_protocolo(ruta)
+    except (OSError, ErrorProtocolo):
+        return []
+    terminos = [t for lista in protocolo.bloques.values() for t in lista]
+    terminos += [t for lista in protocolo.grupos.values() for t in lista]
+    return terminos
