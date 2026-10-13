@@ -107,6 +107,28 @@ ollama list
 
 ---
 
+## La forma fácil: el asistente
+
+```bash
+python -m tatewari asistente
+```
+
+Te lleva de la mano por toda la revisión, en una conversación:
+
+1. revisa tu `.env` (correo y clave de OpenAlex) y te dice cómo arreglarlo;
+2. te deja escoger el protocolo de `protocolos/` y lo valida;
+3. ofrece **explorar** tu tema por significado para ver qué se le escapa;
+4. **cosecha y repite sola** hasta que no quede ninguna búsqueda;
+5. criba, busca los textos completos, baja los PDF y exporta las notas;
+6. ofrece ligar la revisión a tu bóveda de Obsidian.
+
+Explica cada paso, pregunta antes de gastar cuota o de escribir en tu bóveda, y
+enseña la orden que corre, para que aprendas a usarla a mano. «q» sale en
+cualquier momento sin perder nada. Los dudosos no los decide: te dice cómo
+resolverlos tú.
+
+Lo que sigue es el mismo recorrido, orden por orden.
+
 ## Recorrido completo, de principio a fin
 
 Todo lo que sigue funciona tal cual, copiando y pegando. La revisión de ejemplo
@@ -539,6 +561,7 @@ python -m tatewari zea-mayz validar "05_GUION/Guion - Mi borrador.md"
 
 | Orden | Qué hace | ¿Red? | ¿Escribe? |
 |---|---|---|---|
+| `asistente` | toda la revisión paso a paso, con explicaciones | sí | sí |
 | `version` | la versión de Tatewari | no | no |
 | `protocolo validar RUTA` | valida un protocolo y lo resume | no | no |
 | `tesauro "TÉRMINO"` | sinónimos y traducciones en AGROVOC y Wikidata | sí | no |

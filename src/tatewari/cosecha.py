@@ -278,6 +278,13 @@ class Cosecha:
             json.dump(estado, manejador, ensure_ascii=False, indent=2)
             manejador.write("\n")
 
+    def pendientes(self, reintentar: bool = False) -> int:
+        """Cuántas ecuaciones faltan por lanzar. Solo lee; no escribe nada."""
+        hechas = self.cargar_estado().get("hechas", {})
+        return sum(
+            1 for e in self.ecuaciones() if _toca_procesar(hechas.get(str(e.numero)), reintentar)
+        )
+
     # -- Ejecución ---------------------------------------------------------
 
     def plan_seco(self, max_consultas: int | None = None) -> ResumenLote:

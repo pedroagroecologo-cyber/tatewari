@@ -629,6 +629,27 @@ def construir_parser() -> argparse.ArgumentParser:
     )
     descargar_orden.set_defaults(funcion=_orden_descargar)
 
+    asistente_orden = subordenes.add_parser(
+        "asistente",
+        help="Toda la revisión paso a paso, con explicaciones y sin memorizar órdenes.",
+        description=(
+            "Te lleva de la configuración a las notas de Obsidian: revisa tu .env, "
+            "te deja escoger el protocolo, explora el tema, cosecha hasta terminar, "
+            "criba, busca y baja los textos abiertos y exporta. Explica cada paso, "
+            "pregunta antes de gastar cuota y enseña la orden que corre, para que "
+            "aprendas a usarla a mano. Escribe «q» para salir cuando quieras."
+        ),
+        formatter_class=_FormateadorEspanol,
+        add_help=False,
+    )
+    _preparar_parser(asistente_orden)
+    asistente_orden.add_argument(
+        "--si",
+        action="store_true",
+        help="Acepta todas las opciones por defecto sin preguntar.",
+    )
+    asistente_orden.set_defaults(funcion=_orden_asistente)
+
     explorar_orden = subordenes.add_parser(
         "explorar",
         help="Busca por significado en OpenAlex y dice qué se le escapa a tu protocolo.",
@@ -1581,6 +1602,12 @@ def _abrir_en_navegador(enlace: str) -> None:
 def _sesion_descargas():
     """Sesión de la orden ``descargar``. Función aparte para que las pruebas la cambien."""
     return nueva_sesion_descargas()
+
+
+def _orden_asistente(args: argparse.Namespace) -> int:
+    from .asistente import asistente_de_consola
+
+    return asistente_de_consola(main, si_a_todo=args.si).recorrer()
 
 
 def _orden_explorar(args: argparse.Namespace) -> int:
