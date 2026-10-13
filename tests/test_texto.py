@@ -127,11 +127,39 @@ def test_la_ultima_palabra_del_termino_admite_plural():
     assert contiene("treatment wetlands for stormwater", "treatment wetland")
     assert contiene("se midieron las remociones de DQO", "remoción")
     assert contiene("sólidos suspendidos totales", "sólidos suspendidos total")
+    assert contiene("sólidos suspendidos totales", "sólido suspendido total")
 
 
-def test_el_plural_no_va_al_reves():
-    """Es tolerancia al plural, no un lematizador; queda escrito en la prueba."""
-    assert not contiene("a single pathogen was found", "pathogens")
+def test_el_plural_tambien_va_al_reves():
+    """Un término en plural encuentra el singular: el caso que motivó el cambio."""
+    assert contiene("a single pathogen was found", "pathogens")
+    assert contiene(
+        "Compressed Stabilized Earth Block as a Sustainable Building Material",
+        "compressed stabilized earth blocks",
+    )
+    assert contiene("el suelo arcilloso", "suelos arcillosos")
+    assert contiene("se midió la remoción", "remociones")
+    assert contiene("one process was compared", "processes")
+    assert contiene("this study reports", "studies")
+    assert contiene("three case studies", "case study")
+
+
+def test_el_singular_inventado_no_da_falsos_positivos():
+    """Las reglas cortas no deben convertir una palabra en otra que existe."""
+    assert not contiene("a ton of soil", "tones")
+    assert contiene("the tone of the paper", "tones")
+    assert contiene("a straight line", "lines")
+    assert not contiene("lin seed", "lines")
+    assert not contiene("chemical analysi", "analysis")
+    assert not contiene("the proces was", "process")
+    assert not contiene("rich humu", "humus")
+
+
+def test_guion_y_espacio_son_lo_mismo_dentro_del_termino():
+    assert contiene("cement-stabilized compressed earth bricks", "cement stabilized")
+    assert contiene("cement stabilized earth", "cement-stabilized")
+    assert contiene("wet–dry cycles were applied", "wet dry cycle")
+    assert not contiene("cement and stabilized soil", "cement-stabilized")
 
 
 # ---------------------------------------------------------------------------

@@ -44,20 +44,42 @@ Así que un término se busca **como palabra completa**: la expresión regular
 lleva límites de palabra a los dos lados. Dentro del término, cualquier espacio
 admite varios, de modo que «tanque  séptico» coincide con «tanque séptico».
 
-El plural
----------
+El plural, en los dos sentidos
+------------------------------
 
-La última palabra del término admite una **s** o **es** de más, así que el
+Cada palabra del término admite una **s** o **es** de más, así que el
 término «treatment wetland» encuentra «treatment wetlands» y «remoción»
 encuentra «remociones». Hace falta: un protocolo escrito a mano lista unas veces
 el singular y otras el plural, y un artículo titulado *Treatment wetlands for…*
 no puede quedarse fuera de la revisión por una letra.
 
-Es tolerancia al plural, no un lematizador, y va en un solo sentido: un término
-en plural **no** encuentra el singular («pathogens» no encuentra «pathogen»). Si
-un término importa en las dos formas, se escriben las dos en el protocolo, que
-es lo que ya hace el protocolo de humedales con «humedal artificial» y
-«humedales artificiales».
+Y al revés: un término escrito en plural también encuentra el singular
+(«compressed earth blocks» encuentra *Compressed Earth Block as a…*). Al principio
+la tolerancia iba en un solo sentido y se confiaba en que el protocolo listara
+las dos formas; un protocolo escrito por un chat gratuito puso solo el plural y
+dejó fuera doce artículos con el singular en el título. Ahora cada palabra se
+reduce a sus singulares probables con reglas cortas (``_singulares``). Va en
+cada palabra y no solo en la última porque en español el plural concuerda:
+«suelos arcillosos» tiene que encontrar «suelo arcilloso».
+
+- quitar la **s** final («blocks» → «block», «suelos» → «suelo»), salvo en
+  ``-ss``, ``-us`` e ``-is`` («process», «humus», «analysis»);
+- quitar **es** tras ``s``, ``x``, ``z``, ``ch`` o ``sh`` («processes»,
+  «boxes»), o tras ``l``, ``r``, ``n`` o ``d`` si queda una raíz de cinco letras
+  o más («remociones» → «remocion», «totales» → «total»). El mínimo de cinco
+  evita «tones» → «ton» o «lines» → «lin»;
+- ``-ies`` pasa a ``-y`` («studies» → «study»), y un término en ``-y`` encuentra
+  su ``-ies``.
+
+Sigue sin ser un lematizador: no conoce plurales irregulares («analyses»,
+«media»). Si una forma así importa, se escribe en el protocolo.
+
+El guion
+--------
+
+«cement-stabilized» y «cement stabilized» son la misma frase escrita de dos
+maneras, y los autores usan las dos. Dentro de un término, el guion y el espacio
+se tratan igual: cualquiera de los dos encuentra al otro.
 """
 
 from __future__ import annotations
@@ -119,6 +141,48 @@ _NUNCA = re.compile(r"(?!)")
 #: consonante («totales», «remociones»).
 _PLURAL = r"(?:e?s)?"
 
+#: Separador entre las palabras de un término: espacios o guiones, en cualquier
+#: cantidad. Es lo que hace que «cement-stabilized» y «cement stabilized» sean
+#: la misma frase.
+_SEPARADOR = r"[\s\-]+"
+_PARTES = re.compile(_SEPARADOR)
+
+#: Terminaciones tras las que ``es`` es plural en inglés («processes», «boxes»).
+_ANTES_DE_ES_INGLES = ("s", "x", "z", "ch", "sh")
+#: Consonantes tras las que ``es`` es plural en español («totales», «remociones»).
+_ANTES_DE_ES_ESPANOL = ("l", "r", "n", "d")
+#: Raíz mínima para quitar ``es`` tras una de esas consonantes.
+_RAIZ_MINIMA = 5
+_VOCALES = "aeiou"
+
+
+def _singulares(palabra: str) -> tuple[str, ...]:
+    """Formas de `palabra` sin su plural probable, empezando por ella misma.
+
+    Las reglas están explicadas en la cabecera del módulo. La palabra tal cual
+    va siempre primero, así que un término en singular se comporta igual que
+    antes.
+    """
+    formas = [palabra]
+    if len(palabra) > 4 and palabra.endswith("ies"):
+        formas.append(palabra[:-3] + "y")
+    if len(palabra) > 3 and palabra.endswith("es"):
+        raiz = palabra[:-2]
+        if raiz.endswith(_ANTES_DE_ES_INGLES) or (
+            raiz.endswith(_ANTES_DE_ES_ESPANOL) and len(raiz) >= _RAIZ_MINIMA
+        ):
+            formas.append(raiz)
+    if (
+        len(palabra) > 3
+        and palabra.endswith("s")
+        and not palabra.endswith(("ss", "us", "is"))
+    ):
+        formas.append(palabra[:-1])
+    for forma in list(formas):
+        if len(forma) > 2 and forma.endswith("y") and forma[-2] not in _VOCALES:
+            formas.append(forma[:-1] + "ies")
+    return tuple(dict.fromkeys(formas))
+
 
 def normalizar(texto: object) -> str:
     """Devuelve `texto` en minúsculas, sin acentos y con los espacios limpios.
@@ -158,18 +222,24 @@ def expresion_de_termino(termino: str) -> re.Pattern[str]:
     """Compila un término del protocolo como búsqueda de palabra completa.
 
     El término se normaliza, se escapa entero (el punto de «E. coli» es un
-    punto, no un comodín) y sus espacios pasan a admitir varios. Los límites de
-    palabra son lo que evita que «pH» coincida dentro de *phosphorus*, y la
-    última palabra admite la `s` o `es` del plural.
+    punto, no un comodín) y entre sus palabras se admiten espacios o guiones.
+    Los límites de palabra son lo que evita que «pH» coincida dentro de
+    *phosphorus*, y cada palabra admite el plural en los dos sentidos.
 
     Los resultados se memorizan: el protocolo tiene cientos de términos y se
     buscan contra miles de registros.
     """
-    partes = [re.escape(parte) for parte in normalizar(termino).split()]
-    if not partes:
+    palabras = [parte for parte in _PARTES.split(normalizar(termino)) if parte]
+    if not palabras:
         return _NUNCA
-    cuerpo = r"\s+".join(partes) + _PLURAL
+    cuerpo = _SEPARADOR.join(_expresion_de_palabra(palabra) for palabra in palabras)
     return re.compile(r"(?<!\w)" + cuerpo + r"(?!\w)")
+
+
+def _expresion_de_palabra(palabra: str) -> str:
+    """Una palabra del término con su singular y su plural admitidos."""
+    formas = sorted(_singulares(palabra), key=len, reverse=True)
+    return "(?:" + "|".join(re.escape(forma) for forma in formas) + ")" + _PLURAL
 
 
 def contiene(texto: object, termino: str) -> bool:
