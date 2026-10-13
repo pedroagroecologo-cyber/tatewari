@@ -84,10 +84,11 @@ from .embeddings import (
     ordenar_por_parecido,
     vectorizar,
 )
-from .http import ClienteHttp
+from .http import ClienteHttp, ErrorHttp
 from .modelo import ClienteOllama, ErrorOllama
 from .protocolo import ErrorProtocolo, cargar_protocolo
 from .descargas import descargar_incluidos, nueva_sesion as nueva_sesion_descargas
+from .explorar import MAXIMO as MAXIMO_EXPLORAR, explorar as explorar_por_significado
 from .tesauro import FUENTES as FUENTES_TESAURO, buscar as buscar_en_tesauros, es_sigla, terminos_sugeridos
 
 __all__ = ["main", "construir_parser"]
@@ -627,6 +628,39 @@ def construir_parser() -> argparse.ArgumentParser:
         ),
     )
     descargar_orden.set_defaults(funcion=_orden_descargar)
+
+    explorar_orden = subordenes.add_parser(
+        "explorar",
+        help="Busca por significado en OpenAlex y dice qué se le escapa a tu protocolo.",
+        description=(
+            "Describe tu tema con palabras normales y OpenAlex devuelve los trabajos "
+            "más parecidos por significado (hasta 50). Con --protocolo, dice cuáles "
+            "encontraría tu cosecha y cuáles se le escapan, y sugiere frases de sus "
+            "títulos que le faltan al protocolo. Sirve para corregir el protocolo "
+            "antes de la cosecha grande; no sustituye a la cosecha."
+        ),
+        formatter_class=_FormateadorEspanol,
+        add_help=False,
+    )
+    _preparar_parser(explorar_orden)
+    explorar_orden.add_argument(
+        "texto", metavar="TEXTO", help='Tu tema, entre comillas: "bloques de tierra con cal".'
+    )
+    explorar_orden.add_argument(
+        "--protocolo",
+        metavar="RUTA",
+        type=Path,
+        default=None,
+        help="Protocolo que se quiere auditar (también fija años y tipos).",
+    )
+    explorar_orden.add_argument(
+        "--max",
+        metavar="N",
+        type=int,
+        default=25,
+        help=f"Cuántos resultados (por defecto 25, máximo {MAXIMO_EXPLORAR}).",
+    )
+    explorar_orden.set_defaults(funcion=_orden_explorar)
 
     tesauro_orden = subordenes.add_parser(
         "tesauro",
@@ -1547,6 +1581,83 @@ def _abrir_en_navegador(enlace: str) -> None:
 def _sesion_descargas():
     """Sesión de la orden ``descargar``. Función aparte para que las pruebas la cambien."""
     return nueva_sesion_descargas()
+
+
+def _orden_explorar(args: argparse.Namespace) -> int:
+    try:
+        config = cargar_config()
+    except ErrorConfig as error:
+        print(error, file=sys.stderr)
+        return SALIDA_CONFIGURACION
+
+    protocolo = None
+    if args.protocolo is not None:
+        try:
+            protocolo = cargar_protocolo(args.protocolo)
+        except FileNotFoundError as error:
+            print(error, file=sys.stderr)
+            return SALIDA_ARCHIVO_NO_ENCONTRADO
+        except ErrorProtocolo as error:
+            print(error, file=sys.stderr)
+            return SALIDA_PROTOCOLO_INVALIDO
+
+    cliente = _cliente_explorar(config)
+    try:
+        exploracion = explorar_por_significado(
+            args.texto,
+            cliente,
+            protocolo,
+            por_pagina=args.max,
+            correo=config.mailto if config.tiene_mailto else "",
+        )
+    except ErrorHttp as error:
+        print(f"OpenAlex no respondió: {error}", file=sys.stderr)
+        return SALIDA_COSECHA
+
+    print(f"Búsqueda por significado en OpenAlex: «{args.texto}»")
+    print(f"URL: {exploracion.url}")
+    print()
+    for numero, hallado in enumerate(exploracion.hallados, start=1):
+        print(f"{numero:>3}. {hallado.linea()}")
+    if not exploracion.hallados:
+        print("Sin resultados.")
+
+    if protocolo is not None and exploracion.hallados:
+        total = len(exploracion.hallados)
+        cosechados = sum(1 for h in exploracion.hallados if h.cosechado)
+        incluidos = sum(1 for h in exploracion.hallados if h.decision == "incluir")
+        print()
+        print(
+            f"Tu protocolo: la cosecha encontraría {cosechados} de {total}, y el "
+            f"cribado incluiría {incluidos}."
+        )
+        if exploracion.escapados:
+            print(f"Se le escapan {len(exploracion.escapados)}: sus palabras no están en el eje y el cruce.")
+        if exploracion.sugerencias:
+            print()
+            print("Frases que se repiten en los títulos que se escapan (candidatas a sinónimo):")
+            print(
+                "  "
+                + ", ".join(f"«{frase}» ({veces})" for frase, veces in exploracion.sugerencias)
+            )
+            print(
+                "Revísalas con «tatewari tesauro» y, si nombran tu tema, agrégalas a un "
+                "bloque del protocolo. Tú decides."
+            )
+    print()
+    print(
+        "Ojo: esto son los trabajos más parecidos, no una búsqueda exhaustiva ni "
+        "repetible. Para la revisión, cosecha con el protocolo."
+    )
+    cuota = getattr(cliente, "cuota", None)
+    if cuota is not None and cuota.hay_datos:
+        print(cuota.resumen())
+    return SALIDA_OK
+
+
+def _cliente_explorar(config) -> ClienteHttp:
+    """Cliente de ``explorar``, con la clave de OpenAlex. Aparte para las pruebas."""
+    return ClienteHttp(credenciales=config.credenciales_http())
 
 
 def _orden_tesauro(args: argparse.Namespace) -> int:

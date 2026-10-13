@@ -156,6 +156,22 @@ también Bitcoin. Tampoco hace falta escribir singular y plural: el cribado
 reconoce los dos, y guion y espacio son lo mismo («cement-stabilized» =
 «cement stabilized»).
 
+Y antes de la cosecha grande, **audita el protocolo** con una búsqueda por
+significado:
+
+```bash
+python -m tatewari explorar "bloques de tierra compactada estabilizados con cal" --protocolo protocolos/mi_tema.json
+```
+
+OpenAlex devuelve los trabajos más parecidos a lo que describes (hasta 50, en
+español o en inglés), y Tatewari dice de cada uno si tu cosecha lo encontraría y
+qué haría el cribado. Al final junta las frases que se repiten en los títulos
+que se escapan: son candidatas a sinónimos que te faltan. En una prueba real, un
+protocolo escrito por ChatGPT solo habría encontrado 1 de 30 trabajos
+pertinentes, porque su cruce exigía «lime stabilization» y los autores escriben
+«stabilized with lime». No sustituye a la cosecha: son «los más parecidos», no
+una búsqueda exhaustiva ni repetible.
+
 ### Paso 2. Ver las búsquedas antes de gastar red
 
 ```bash
@@ -526,6 +542,7 @@ python -m tatewari zea-mayz validar "05_GUION/Guion - Mi borrador.md"
 | `version` | la versión de Tatewari | no | no |
 | `protocolo validar RUTA` | valida un protocolo y lo resume | no | no |
 | `tesauro "TÉRMINO"` | sinónimos y traducciones en AGROVOC y Wikidata | sí | no |
+| `explorar "TEXTO" [--protocolo RUTA]` | búsqueda por significado; qué se le escapa al protocolo | sí | no |
 | `cosechar REVISIÓN --protocolo RUTA` | cosecha en OpenAlex o Crossref | sí | sí |
 | `cosechar … --seco` | solo imprime las ecuaciones y sus URL | no | no |
 | `cosechar … --fixture RUTA` | sirve un archivo local como respuesta | no | sí |
