@@ -45,6 +45,7 @@ __all__ = ["Trabajo", "Trabajos", "crear_servidor", "CABECERA_CLAVE"]
 
 CABECERA_CLAVE = "X-Tatewari-Clave"
 MAXIMO_JSON = 1024 * 1024
+ESPERA_DESCARTE = 2.0  # segundos para leer un cuerpo que se va a rechazar
 _ESTATICOS = {
     "/": ("index.html", "text/html; charset=utf-8"),
     "/estatico/app.js": ("app.js", "text/javascript; charset=utf-8"),
@@ -261,7 +262,31 @@ def crear_servidor(
             self.send_header("Referrer-Policy", "no-referrer")
             self.send_header("Cache-Control", "no-store")
 
+        def _descartar_cuerpo(self) -> None:
+            """Lee y tira el cuerpo que nadie leyó antes de responder.
+
+            En Windows, cerrar la conexión con datos sin leer manda un RST, y el
+            cliente pierde la respuesta (un 403 o un 401 llega como «conexión
+            anulada»). Solo se descarta un cuerpo pequeño y con un tiempo corto:
+            uno grande o lento se sigue cortando, como antes.
+            """
+            if getattr(self, "_cuerpo_leido", False):
+                return
+            self._cuerpo_leido = True
+            try:
+                largo = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                return
+            if not 0 < largo <= MAXIMO_JSON:
+                return
+            self.connection.settimeout(ESPERA_DESCARTE)
+            try:
+                self.rfile.read(largo)
+            except OSError:
+                pass
+
         def _json(self, datos: Any, estado: int = 200) -> None:
+            self._descartar_cuerpo()
             cuerpo = json.dumps(datos, ensure_ascii=False).encode("utf-8")
             self.send_response(estado)
             self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -301,6 +326,7 @@ def crear_servidor(
             largo = int(self.headers.get("Content-Length") or 0)
             if largo > MAXIMO_JSON:
                 raise ErrorInterfaz("La petición es demasiado grande.")
+            self._cuerpo_leido = True
             crudo = self.rfile.read(largo) if largo else b"{}"
             try:
                 datos = json.loads(crudo.decode("utf-8") or "{}")
@@ -400,6 +426,7 @@ def crear_servidor(
             """Cambia la clave de la dirección por una galleta, para abrir archivos con un enlace."""
             if not hmac.compare_digest((self.headers.get(CABECERA_CLAVE) or "").encode(), clave.encode()):
                 return self._error("Clave incorrecta.", HTTPStatus.UNAUTHORIZED)
+            self._descartar_cuerpo()
             cuerpo = b'{"ok": true}'
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -415,6 +442,7 @@ def crear_servidor(
             if largo > TAMANO_MAXIMO:
                 raise ErrorInterfaz(f"El archivo pasa de {TAMANO_MAXIMO // (1024 * 1024)} MB.")
             servicio.orquestador()  # sin Vault no se acepta nada
+            self._cuerpo_leido = True
             ruta = servicio.guardar_subida(nombre, self.rfile.read(largo))
             trabajo = trabajos.encolar(
                 f"Procesar «{ruta.name}»",
