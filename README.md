@@ -256,6 +256,20 @@ biblioteca.
 > la editorial, nada de rodear el acceso (AGENTS.md, regla 5). Cuando no hay
 > versión legal abierta, el programa lo dice y se detiene ahí.
 
+Y para bajarlos:
+
+```bash
+python -m tatewari descargar demo
+```
+
+Deja los PDF en `revisiones/demo/pdf/`, con nombres que se reconocen
+(`R0001_Malkanthi_2019.pdf`). Solo guarda lo que de verdad es un PDF, y es
+reanudable. Muchas editoriales no entregan el archivo a un programa aunque el
+artículo sea abierto; esos quedan en `para-abrir.md`, con su enlace y el nombre
+con que guardarlos. Con `--abrir` se abren en tu navegador, que sí puede
+bajarlos. Tatewari se presenta siempre como Tatewari: si una editorial rechaza a
+un programa, se respeta.
+
 ### Paso 9. Exportar
 
 ```bash
@@ -507,6 +521,7 @@ python -m tatewari zea-mayz validar "05_GUION/Guion - Mi borrador.md"
 | `pendientes … --registrar` | apunta esa ronda de auditoría | no | sí |
 | `decidir REVISIÓN ID --decision … --motivo …` | registra una decisión humana | no | sí |
 | `texto-completo REVISIÓN` | busca la versión abierta en Unpaywall | sí | sí |
+| `descargar REVISIÓN [--abrir]` | baja a `pdf/` los PDF abiertos de los incluidos | sí | sí |
 | `exportar REVISIÓN` | BibTeX y las tres fichas en Markdown | no | sí |
 | `estado REVISIÓN` | por dónde va la revisión | no | **no** |
 | `ordenar REVISIÓN --pregunta TEXTO` | ordena por cercanía a la pregunta | local | caché |

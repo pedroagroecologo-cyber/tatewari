@@ -87,6 +87,7 @@ from .embeddings import (
 from .http import ClienteHttp
 from .modelo import ClienteOllama, ErrorOllama
 from .protocolo import ErrorProtocolo, cargar_protocolo
+from .descargas import descargar_incluidos, nueva_sesion as nueva_sesion_descargas
 from .tesauro import FUENTES as FUENTES_TESAURO, buscar as buscar_en_tesauros, es_sigla, terminos_sugeridos
 
 __all__ = ["main", "construir_parser"]
@@ -585,6 +586,47 @@ def construir_parser() -> argparse.ArgumentParser:
         ),
     )
     texto_completo.set_defaults(funcion=_orden_texto_completo)
+
+    descargar_orden = subordenes.add_parser(
+        "descargar",
+        help="Baja a la carpeta pdf/ los PDF en acceso abierto de los incluidos.",
+        description=(
+            "Baja el PDF legal de cada registro incluido: el enlace de Unpaywall "
+            "(lanza antes «texto-completo») o, si no lo hay, el de OpenAlex. Solo "
+            "guarda lo que de verdad es un PDF; si el enlace es una página web o "
+            "la editorial no deja bajarlo a un programa, lo lista para abrirlo en "
+            "el navegador. No elude muros de pago. Es reanudable."
+        ),
+        formatter_class=_FormateadorEspanol,
+        add_help=False,
+    )
+    _preparar_parser(descargar_orden)
+    descargar_orden.add_argument(
+        "revision", metavar="REVISIÓN", help="Nombre de la revisión."
+    )
+    descargar_orden.add_argument(
+        "--protocolo",
+        metavar="RUTA",
+        type=Path,
+        default=None,
+        help="Ruta al protocolo. Si se omite, el que anotó la cosecha.",
+    )
+    descargar_orden.add_argument(
+        "--max",
+        metavar="N",
+        type=int,
+        default=None,
+        help="Baja solo los primeros N incluidos (para probar).",
+    )
+    descargar_orden.add_argument(
+        "--abrir",
+        action="store_true",
+        help=(
+            "Abre en tu navegador los que no se bajaron solos (máximo 15 por "
+            "vez), para que los guardes tú."
+        ),
+    )
+    descargar_orden.set_defaults(funcion=_orden_descargar)
 
     tesauro_orden = subordenes.add_parser(
         "tesauro",
@@ -1430,6 +1472,81 @@ def _orden_exportar(args: argparse.Namespace) -> int:
             "¿Se ha cribado ya esta revisión?"
         )
     return SALIDA_OK
+
+
+def _orden_descargar(args: argparse.Namespace) -> int:
+    cribado, codigo = _preparar_cribado(args)
+    if cribado is None:
+        return codigo
+    try:
+        resultado = cribado.calcular()
+    except ErrorCribado as error:
+        print(error, file=sys.stderr)
+        return SALIDA_CRIBADO
+
+    incluidos = resultado.por_decision("incluir")
+    if args.max is not None:
+        incluidos = incluidos[: max(0, args.max)]
+    if not incluidos:
+        print(
+            "No hay ningún registro incluido todavía, así que no hay nada que "
+            "bajar. Lanza antes «tatewari cribar»."
+        )
+        return SALIDA_OK
+
+    resueltos = leer_resueltos(cribado.carpeta / NOMBRE_TEXTO_COMPLETO)
+    if not resueltos:
+        print(
+            "Aviso: no hay texto_completo.json; se usan los enlaces de OpenAlex, "
+            "que a veces llevan a la página del artículo y no al PDF. Para más "
+            f"PDF, lanza antes «tatewari texto-completo {args.revision}».",
+        )
+        print()
+
+    print(f"Bajando los PDF abiertos de {len(incluidos)} registros incluidos.")
+    print()
+
+    def avance(indice: int, total: int, descarga) -> None:
+        print(f"  [{indice}/{total}] {descarga.linea()}")
+
+    salida = descargar_incluidos(
+        incluidos, resueltos, cribado.carpeta, sesion=_sesion_descargas(), avance=avance
+    )
+    print()
+    print(salida.resumen())
+    print()
+    print(f"Carpeta : {cribado.carpeta / 'pdf'}")
+    a_mano = salida.a_mano()
+    if a_mano:
+        print(f"Para abrir: {cribado.carpeta / 'para-abrir.md'} ({len(a_mano)} enlaces)")
+        if args.abrir:
+            for descarga in a_mano[:MAX_PESTANAS]:
+                _abrir_en_navegador(descarga.enlace)
+            print()
+            print(f"Abrí {min(len(a_mano), MAX_PESTANAS)} en tu navegador.", end=" ")
+            if len(a_mano) > MAX_PESTANAS:
+                print("Cuando los guardes, vuelve a lanzar la orden para los siguientes.")
+            else:
+                print("Guarda cada PDF en la carpeta pdf/ con el nombre de para-abrir.md.")
+        else:
+            print("Con --abrir se abren en tu navegador para guardarlos tú.")
+    return SALIDA_OK
+
+
+#: Pestañas que abre ``descargar --abrir`` de una vez: más satura el navegador.
+MAX_PESTANAS = 15
+
+
+def _abrir_en_navegador(enlace: str) -> None:
+    """Abre `enlace` en el navegador del sistema. Aparte para que las pruebas lo cambien."""
+    import webbrowser
+
+    webbrowser.open_new_tab(enlace)
+
+
+def _sesion_descargas():
+    """Sesión de la orden ``descargar``. Función aparte para que las pruebas la cambien."""
+    return nueva_sesion_descargas()
 
 
 def _orden_tesauro(args: argparse.Namespace) -> int:
