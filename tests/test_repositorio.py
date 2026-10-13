@@ -107,6 +107,9 @@ def test_no_se_llama_a_ningun_modelo_en_la_nube(ruta):
         "dx.doi.org",
         "arxiv.org",
         "www.ncbi.nlm.nih.gov",
+        # Tesauros para sugerir términos del protocolo (AGENTS.md, regla 5).
+        "agrovoc.fao.org",
+        "www.wikidata.org",
         # Y las que solo se citan en la documentación de los módulos.
         "docs.openalex.org",
         "api.crossref.org",

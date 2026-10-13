@@ -87,6 +87,7 @@ from .embeddings import (
 from .http import ClienteHttp
 from .modelo import ClienteOllama, ErrorOllama
 from .protocolo import ErrorProtocolo, cargar_protocolo
+from .tesauro import FUENTES as FUENTES_TESAURO, buscar as buscar_en_tesauros, es_sigla, terminos_sugeridos
 
 __all__ = ["main", "construir_parser"]
 
@@ -584,6 +585,37 @@ def construir_parser() -> argparse.ArgumentParser:
         ),
     )
     texto_completo.set_defaults(funcion=_orden_texto_completo)
+
+    tesauro_orden = subordenes.add_parser(
+        "tesauro",
+        help="Sugiere sinónimos y traducciones de un término (AGROVOC, Wikidata).",
+        description=(
+            "Busca un término en dos tesauros abiertos, AGROVOC (FAO) y "
+            "Wikidata, y enseña cómo se llama ese concepto en español y en "
+            "inglés, con sus formas alternativas. Solo sugiere: no toca el "
+            "protocolo. Tú eliges qué términos copiar a sus bloques."
+        ),
+        formatter_class=_FormateadorEspanol,
+        add_help=False,
+    )
+    _preparar_parser(tesauro_orden)
+    tesauro_orden.add_argument(
+        "termino", metavar="TÉRMINO", help='Lo que buscas, entre comillas: "compressed earth block".'
+    )
+    tesauro_orden.add_argument(
+        "--fuente",
+        choices=(*FUENTES_TESAURO, "todas"),
+        default="todas",
+        help="Qué tesauro consultar (por defecto, los dos).",
+    )
+    tesauro_orden.add_argument(
+        "--max",
+        metavar="N",
+        type=int,
+        default=3,
+        help="Conceptos como máximo por tesauro (por defecto 3).",
+    )
+    tesauro_orden.set_defaults(funcion=_orden_tesauro)
 
     exportar_orden = subordenes.add_parser(
         "exportar",
@@ -1398,6 +1430,46 @@ def _orden_exportar(args: argparse.Namespace) -> int:
             "¿Se ha cribado ya esta revisión?"
         )
     return SALIDA_OK
+
+
+def _orden_tesauro(args: argparse.Namespace) -> int:
+    fuentes = FUENTES_TESAURO if args.fuente == "todas" else (args.fuente,)
+    consulta = buscar_en_tesauros(
+        args.termino, _cliente_tesauro(), fuentes=fuentes, maximo=max(1, args.max)
+    )
+    print(f"«{args.termino}» en tesauros abiertos. Son sugerencias: tú decides qué va al protocolo.")
+    for concepto in consulta.conceptos:
+        print()
+        fuente = "AGROVOC" if concepto.fuente == "agrovoc" else "Wikidata"
+        detalle = f" — {concepto.descripcion}" if concepto.descripcion else ""
+        print(f"{fuente} · {concepto.nombre}{detalle}")
+        for idioma, formas in concepto.etiquetas.items():
+            marcadas = [f"{forma} (sigla)" if es_sigla(forma) else forma for forma in formas]
+            print(f"  {idioma}: " + " · ".join(marcadas))
+        if concepto.relacionados:
+            print("  cercanos: " + " · ".join(concepto.relacionados[:8]))
+        print(f"  {concepto.enlace}")
+    for aviso in consulta.avisos:
+        print()
+        print(aviso)
+    frases, siglas = terminos_sugeridos(consulta)
+    if frases:
+        print()
+        print("Para copiar a un bloque del protocolo (borra los que no te sirvan):")
+        print("  " + ", ".join(json.dumps(frase, ensure_ascii=False) for frase in frases))
+    if siglas:
+        print()
+        print(
+            "Siglas encontradas: " + ", ".join(siglas) + ". Compruébalas antes de "
+            "usarlas: una sigla suele significar otra cosa en otro campo (en "
+            "OpenAlex, «BTC» trae sobre todo artículos de Bitcoin)."
+        )
+    return SALIDA_OK
+
+
+def _cliente_tesauro() -> ClienteHttp:
+    """Cliente de la orden ``tesauro``. Función aparte para que las pruebas lo cambien."""
+    return ClienteHttp()
 
 
 def _orden_texto_completo(args: argparse.Namespace) -> int:

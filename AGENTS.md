@@ -46,6 +46,9 @@ El cribado automático **propone**, no decide:
 
 Permitido: **OpenAlex, Crossref, Unpaywall, arXiv, PMC**.
 
+Para sugerir términos del protocolo (nunca para buscar artículos ni bajar
+textos): los tesauros abiertos **AGROVOC** (FAO) y **Wikidata**.
+
 Prohibido: **Sci-Hub**, raspar **Google Scholar**, raspar **ResearchGate**,
 y cualquier técnica para **eludir un muro de pago**. Si un texto completo no
 está disponible legalmente, se marca como no disponible y se sigue adelante.

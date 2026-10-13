@@ -141,6 +141,21 @@ Los errores salen todos de una vez y señalan el campo exacto
 suplicio. La forma completa está más abajo, en
 [El protocolo de búsqueda](#el-protocolo-de-búsqueda).
 
+Para no olvidar sinónimos, pregúntale a dos tesauros abiertos cómo se llama
+cada concepto en español y en inglés:
+
+```bash
+python -m tatewari tesauro "compressed earth block"
+```
+
+Consulta **AGROVOC** (FAO: agua, suelo, agro, medio ambiente) y **Wikidata**
+(todo lo demás, con alias en muchos idiomas), y deja al final una línea de
+términos lista para copiar a un bloque. **Solo sugiere**: no toca el protocolo,
+y marca aparte las siglas, porque «BTC» es *bloque de tierra comprimida* y
+también Bitcoin. Tampoco hace falta escribir singular y plural: el cribado
+reconoce los dos, y guion y espacio son lo mismo («cement-stabilized» =
+«cement stabilized»).
+
 ### Paso 2. Ver las búsquedas antes de gastar red
 
 ```bash
@@ -481,6 +496,7 @@ python -m tatewari zea-mayz validar "05_GUION/Guion - Mi borrador.md"
 |---|---|---|---|
 | `version` | la versión de Tatewari | no | no |
 | `protocolo validar RUTA` | valida un protocolo y lo resume | no | no |
+| `tesauro "TÉRMINO"` | sinónimos y traducciones en AGROVOC y Wikidata | sí | no |
 | `cosechar REVISIÓN --protocolo RUTA` | cosecha en OpenAlex o Crossref | sí | sí |
 | `cosechar … --seco` | solo imprime las ecuaciones y sus URL | no | no |
 | `cosechar … --fixture RUTA` | sirve un archivo local como respuesta | no | sí |
