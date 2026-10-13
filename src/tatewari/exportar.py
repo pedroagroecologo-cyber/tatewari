@@ -572,6 +572,7 @@ class ResultadoExportacion:
     sin_abierto: int = 0
     con_abierto: int = 0
     rutas: list[Path] = field(default_factory=list)
+    notas: Any = None
 
     def resumen(self) -> str:
         """Texto para la CLI."""
@@ -585,6 +586,13 @@ class ResultadoExportacion:
             "Archivos escritos:",
         ]
         lineas.extend(f"  {ruta}" for ruta in self.rutas)
+        if self.notas is not None:
+            lineas.append("")
+            lineas.append(
+                f"Notas de Obsidian: {self.notas.escritas} en {self.notas.carpeta} "
+                f"({self.notas.con_pdf} con su PDF; "
+                f"{self.notas.conservadas} con «Mis notas» conservadas)"
+            )
         return "\n".join(lineas)
 
 
@@ -640,4 +648,9 @@ def exportar(
                 manejador.write("\n")
         salida.rutas.append(ruta)
 
+    # Una nota por incluido, para Obsidian. Va en su propia carpeta: los cuatro
+    # archivos de arriba no cambian.
+    from .notas import escribir_notas  # import local: notas importa descargas
+
+    salida.notas = escribir_notas(incluidos, carpeta, revision)
     return salida

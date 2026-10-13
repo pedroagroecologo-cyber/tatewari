@@ -285,6 +285,14 @@ Cuatro archivos en la carpeta de la revisión:
 | `revision-manual.md` | los dudosos, con la orden de `decidir` ya escrita |
 | `por-conseguir.md` | los incluidos sin acceso abierto, con su DOI |
 
+Y una carpeta `notas/` con **una nota de Obsidian por artículo incluido** más un
+`00 Índice.md` agrupado por clasificación. Cada nota trae sus propiedades (DOI,
+año, revista, autores, decisión, etiquetas), el enlace al PDF si ya se bajó con
+`descargar`, el resumen completo de los autores y un apartado **«## Mis
+notas»**: lo que escribas debajo de ese título se conserva tal cual cada vez que
+vuelves a exportar. Si tu bóveda está ligada a `revisiones/` con un enlace
+simbólico, las notas aparecen solas en Obsidian.
+
 ### En cualquier momento: ¿por dónde iba?
 
 ```bash
