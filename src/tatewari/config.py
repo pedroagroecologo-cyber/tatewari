@@ -58,6 +58,7 @@ PREDETERMINADOS: dict[str, str] = {
     "TATEWARI_OBSIDIAN_VAULT": "",
     "TATEWARI_MODELO_EXTRACCION": "",
     "TATEWARI_MODELO_SINTESIS": "",
+    "TATEWARI_ESTILO_CITA": "apa",
 }
 
 
@@ -136,6 +137,9 @@ class Config:
     modelo_sintesis: str = ""
     #: Clave de OpenAlex. Vacia = cola sin clave, con el presupuesto minimo.
     openalex_key: str = field(default="", repr=False)
+    #: Estilo de las citas al exportar: apa, vancouver, ieee, chicago, harvard,
+    #: mla o iso690 (ver `citas.py`).
+    estilo_cita: str = "apa"
 
     def credenciales_http(self) -> dict[str, str]:
         """Token por servidor, para `ClienteHttp(credenciales=...)`.
@@ -182,6 +186,7 @@ class Config:
             f"OpenAlex     : {clave}\n"
             f"Ollama       : {self.ollama}\n"
             f"Datos        : {self.datos}\n"
+            f"Citas        : {self.estilo_cita}\n"
             f"Vault        : {self.vault or '(sin configurar)'}"
         )
 
@@ -225,8 +230,16 @@ def cargar_config(
             vault = base / vault
         vault = Path(os.path.normpath(vault))
 
+    from .citas import normalizar_estilo  # import local: citas no depende de config
+
+    try:
+        estilo_cita = normalizar_estilo(valores["TATEWARI_ESTILO_CITA"].strip() or "apa")
+    except ValueError as error:
+        raise ErrorConfig(f"TATEWARI_ESTILO_CITA: {error}") from error
+
     return Config(
         mailto=valores["TATEWARI_MAILTO"].strip(),
+        estilo_cita=estilo_cita,
         openalex_key=valores["TATEWARI_OPENALEX_KEY"].strip(),
         ollama=valores["TATEWARI_OLLAMA"].strip().rstrip("/"),
         datos=Path(os.path.normpath(datos)),

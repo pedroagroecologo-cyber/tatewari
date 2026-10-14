@@ -87,6 +87,7 @@ from .embeddings import (
 from .http import ClienteHttp, ErrorHttp
 from .modelo import ClienteOllama, ErrorOllama
 from .protocolo import ErrorProtocolo, cargar_protocolo
+from .citas import ESTILOS as ESTILOS_CITA
 from .descargas import descargar_incluidos, nueva_sesion as nueva_sesion_descargas
 from .explorar import MAXIMO as MAXIMO_EXPLORAR, explorar as explorar_por_significado
 from .tesauro import FUENTES as FUENTES_TESAURO, buscar as buscar_en_tesauros, es_sigla, terminos_sugeridos
@@ -716,12 +717,13 @@ def construir_parser() -> argparse.ArgumentParser:
 
     exportar_orden = subordenes.add_parser(
         "exportar",
-        help="Escribe el BibTeX y las fichas en Markdown.",
+        help="Escribe el BibTeX, las fichas, las referencias y las notas de Obsidian.",
         description=(
-            "Escribe cuatro archivos en la carpeta de la revisión: incluidos.bib "
-            "para Zotero o Mendeley, incluidos.md con una ficha por artículo, "
-            "revision-manual.md con los dudosos que esperan una persona, y "
-            "por-conseguir.md con los incluidos sin acceso abierto."
+            "Escribe en la carpeta de la revisión: incluidos.bib para Zotero o "
+            "Mendeley, incluidos.md con una ficha por artículo, referencias.md "
+            "con la lista en tu estilo de cita, revision-manual.md con los "
+            "dudosos, por-conseguir.md con los que no tienen acceso abierto, y "
+            "una nota de Obsidian por artículo en notas/."
         ),
         formatter_class=_FormateadorEspanol,
         add_help=False,
@@ -736,6 +738,16 @@ def construir_parser() -> argparse.ArgumentParser:
         type=Path,
         default=None,
         help="Ruta al protocolo. Si se omite, el que anotó la cosecha.",
+    )
+    exportar_orden.add_argument(
+        "--estilo",
+        choices=tuple(ESTILOS_CITA),
+        default=None,
+        help=(
+            "Estilo de las citas: "
+            + ", ".join(f"{clave} ({nombre})" for clave, nombre in ESTILOS_CITA.items())
+            + ". Por defecto, TATEWARI_ESTILO_CITA del .env (apa si no está)."
+        ),
     )
     exportar_orden.set_defaults(funcion=_orden_exportar)
 
@@ -1509,7 +1521,8 @@ def _orden_exportar(args: argparse.Namespace) -> int:
         print(error, file=sys.stderr)
         return SALIDA_CRIBADO
 
-    salida = exportar(resultado, cribado.carpeta, revision=cribado.revision)
+    estilo = args.estilo or cribado.config.estilo_cita
+    salida = exportar(resultado, cribado.carpeta, revision=cribado.revision, estilo=estilo)
 
     print(salida.resumen())
     if salida.sin_abierto:

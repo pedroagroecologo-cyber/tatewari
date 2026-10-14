@@ -173,6 +173,11 @@ def normalizar_item(item: Any) -> dict[str, Any]:
     # Unpaywall en su propio paso. Aquí queda "NR", no una URL adivinada.
     registro["oa_url"] = NR
 
+    registro["volumen"] = texto_o_nr(item.get("volume"))
+    registro["numero"] = texto_o_nr(item.get("issue"))
+    paginas = texto_o_nr(item.get("page"))
+    registro["paginas"] = paginas.replace("-", "–") if paginas != NR else NR
+
     return registro
 
 

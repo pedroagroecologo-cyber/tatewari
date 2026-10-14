@@ -415,9 +415,10 @@ def test_exportar_escribe_los_cuatro_archivos(tmp_path, protocolo, ruta_fixture_
         NOMBRE_INCLUIDOS,
         NOMBRE_REVISION,
         NOMBRE_POR_CONSEGUIR,
+        "referencias.md",
     ):
         assert (tmp_path / nombre).is_file()
-    assert len(salida.rutas) == 4
+    assert len(salida.rutas) == 5
     assert salida.incluidos == resultado.conteos["incluir"]
     assert salida.dudosos == resultado.conteos["dudoso"]
     assert salida.con_abierto + salida.sin_abierto == salida.incluidos

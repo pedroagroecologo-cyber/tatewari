@@ -42,6 +42,10 @@ CAMPOS_REGISTRO = (
     "tipo",
     "citas",
     "oa_url",
+    # Datos bibliográficos para armar la cita en APA, Vancouver y demás.
+    "volumen",
+    "numero",
+    "paginas",
 )
 
 _ESPACIOS = re.compile(r"\s+")

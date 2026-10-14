@@ -314,14 +314,39 @@ un programa, se respeta.
 python -m tatewari exportar demo
 ```
 
-Cuatro archivos en la carpeta de la revisión:
+Cinco archivos en la carpeta de la revisión:
 
 | Archivo | Para qué |
 |---|---|
 | `incluidos.bib` | meter la bibliografía en Zotero o Mendeley y citar |
-| `incluidos.md` | una ficha por artículo, para leer de corrido |
+| `incluidos.md` | una ficha por artículo, con su cita, para leer de corrido |
+| `referencias.md` | la lista de referencias en tu estilo de cita |
 | `revision-manual.md` | los dudosos, con la orden de `decidir` ya escrita |
 | `por-conseguir.md` | los incluidos sin acceso abierto, con su DOI |
+
+**El estilo de las citas** se elige en el `.env` con `TATEWARI_ESTILO_CITA`, o
+al exportar con `--estilo`:
+
+| Clave | Estilo | Lista |
+|---|---|---|
+| `apa` (por defecto) | APA 7.ª edición | alfabética |
+| `vancouver` | Vancouver (ICMJE / NLM) | numerada |
+| `ieee` | IEEE | numerada |
+| `chicago` | Chicago 17.ª, autor-fecha | alfabética |
+| `harvard` | Harvard (Cite Them Right) | alfabética |
+| `mla` | MLA 9.ª edición | alfabética |
+| `iso690` | ISO 690 / UNE-ISO 690 | alfabética |
+
+```bash
+python -m tatewari exportar demo --estilo vancouver
+```
+
+Las citas se arman con lo que dan OpenAlex o Crossref, **sin inventar nada**: si
+falta el volumen, el número o las páginas, salen sin ellos (las revisiones
+cosechadas antes de que Tatewari guardara esos datos no los tienen; vuelve a
+cosechar). El título se deja como lo publicó la revista, y el apellido se deduce
+del nombre completo, con dos apellidos para nombres largos en español. Para la
+versión final de la tesis, revisa cada referencia o usa Zotero con el `.bib`.
 
 Y una carpeta `notas/` con **una nota de Obsidian por artículo incluido** más un
 `00 Índice.md` agrupado por clasificación. Cada nota trae sus propiedades (DOI,

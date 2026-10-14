@@ -132,6 +132,7 @@ def nota_markdown(
     pdf: str | None = None,
     mis_notas: str | None = None,
     resumen_pdf: Any = None,
+    estilo: str | None = None,
 ) -> str:
     """La nota de un incluido.
 
@@ -176,6 +177,7 @@ def nota_markdown(
         f"**Año:** {anio} · **Revista:** {_texto(registro.get('revista'))}  ",
         f"**DOI:** " + (f"[{doi}](https://doi.org/{doi})" if doi != NR else NR) + "  ",
         f"**Texto completo:** {texto_completo}  ",
+        *_linea_de_cita(registro, estilo),
         f"**Tatewari:** {_texto(getattr(decision, 'decision', 'incluir'))} — "
         f"{_texto(getattr(decision, 'motivo', NR))} "
         f"(decidido por {_texto(getattr(decision, 'decidido_por', NR))})",
@@ -191,6 +193,14 @@ def nota_markdown(
         mis_notas if mis_notas else TEXTO_INICIAL,
     ]
     return "\n".join(propiedades + [""] + cuerpo) + "\n"
+
+
+def _linea_de_cita(registro: Mapping[str, Any], estilo: str | None) -> list[str]:
+    if not estilo:
+        return []
+    from .citas import ESTILOS, citar
+
+    return [f"**Cita ({ESTILOS[estilo]}):** {citar(registro, estilo)}  "]
 
 
 def _seccion_pdf(pdf: str | None, resumen: Any) -> list[str]:
@@ -256,6 +266,7 @@ def escribir_notas(
     carpeta: Path | str,
     revision: str,
     terminos: Iterable[str] = (),
+    estilo: str | None = None,
 ) -> ResultadoNotas:
     """Escribe una nota por decisión y el índice en ``carpeta/notas``.
 
@@ -286,7 +297,7 @@ def escribir_notas(
             resumen = resumir_pdf(carpeta / CARPETA_PDF / pdf, terminos)
             resultado.resumidas += 0 if resumen.vacio else 1
         ruta.write_text(
-            nota_markdown(decision, revision, pdf, previas, resumen),
+            nota_markdown(decision, revision, pdf, previas, resumen, estilo),
             encoding="utf-8",
             newline="\n",
         )

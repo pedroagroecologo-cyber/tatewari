@@ -86,6 +86,7 @@ NOMBRE_BIB = "incluidos.bib"
 NOMBRE_INCLUIDOS = "incluidos.md"
 NOMBRE_REVISION = "revision-manual.md"
 NOMBRE_POR_CONSEGUIR = "por-conseguir.md"
+NOMBRE_REFERENCIAS = "referencias.md"
 
 #: Caracteres del resumen que entran en una ficha. Una ficha es para decidir si
 #: vale la pena abrir el artículo, no para sustituirlo.
@@ -362,10 +363,17 @@ def _enlace_doi(doi: Any) -> str:
     return f"[{limpio}](https://doi.org/{limpio})"
 
 
-def ficha_markdown(decision: Any, limite: int = LIMITE_RESUMEN) -> str:
+def ficha_markdown(
+    decision: Any, limite: int = LIMITE_RESUMEN, estilo: str | None = None
+) -> str:
     """La ficha de un artículo: todo lo que hace falta para decidir si se lee."""
     registro = decision.registro
     oa = _texto(registro.get("oa_url"), "")
+    cita = []
+    if estilo:
+        from .citas import ESTILOS, citar
+
+        cita = [f"- **Cita ({ESTILOS[estilo]})**: {citar(registro, estilo)}"]
     lineas = [
         f"### {decision.identificador} — {_texto(registro.get('titulo'))}",
         "",
@@ -378,6 +386,7 @@ def ficha_markdown(decision: Any, limite: int = LIMITE_RESUMEN) -> str:
         f"- **Decidido por**: {_texto(getattr(decision, 'decidido_por', NR))}",
         f"- **Texto completo**: "
         + (f"[acceso abierto]({oa})" if oa else "sin versión abierta localizada"),
+        *cita,
         "",
         f"**Resumen**: {_recortar(registro.get('resumen'), limite)}",
         "",
@@ -401,6 +410,7 @@ def incluidos_markdown(
     revision: str = NR,
     fecha: str = "",
     limite: int = LIMITE_RESUMEN,
+    estilo: str | None = None,
 ) -> str:
     """Una ficha por artículo incluido."""
     fecha = fecha or datetime.now().isoformat(timespec="seconds")
@@ -415,7 +425,28 @@ def incluidos_markdown(
         return "\n".join(lineas) + "\n"
 
     for decision in decisiones:
-        lineas.append(ficha_markdown(decision, limite))
+        lineas.append(ficha_markdown(decision, limite, estilo))
+    return "\n".join(lineas)
+
+
+def referencias_markdown(
+    decisiones: Sequence[Any], estilo: str, revision: str = NR, fecha: str = ""
+) -> str:
+    """La lista de referencias de los incluidos, en el estilo elegido."""
+    from .citas import ESTILOS, lista_de_referencias
+
+    fecha = fecha or datetime.now().isoformat(timespec="seconds")
+    lineas = _cabecera(
+        f"Referencias · {ESTILOS[estilo]}", revision, fecha, len(decisiones), "Referencias"
+    )
+    lineas += [
+        "Armadas con los datos de OpenAlex o Crossref, sin inventar nada: si falta el",
+        "volumen, el número o las páginas, la referencia sale sin ellos. Los apellidos",
+        "se deducen del nombre completo; revísalos (o importa incluidos.bib en Zotero).",
+        "",
+    ]
+    referencias = lista_de_referencias((d.registro for d in decisiones), estilo)
+    lineas += [f"{referencia}\n" for referencia in referencias]
     return "\n".join(lineas)
 
 
@@ -607,8 +638,13 @@ def exportar(
     revision: str = "",
     fecha: str = "",
     limite: int = LIMITE_RESUMEN,
+    estilo: str = "apa",
 ) -> ResultadoExportacion:
-    """Escribe los cuatro archivos de exportación en `carpeta`.
+    """Escribe los archivos de exportación en `carpeta`.
+
+    `estilo` es el de las citas (``apa``, ``vancouver``, ``ieee``, ``chicago``,
+    ``harvard``, ``mla`` o ``iso690``): va en cada ficha, en las notas y en
+    ``referencias.md``.
 
     `resultado` es un `ResultadoCribado`. Todo va en UTF-8 **sin** BOM y con
     saltos de línea LF: la única excepción del BOM que autoriza AGENTS.md es
@@ -633,7 +669,8 @@ def exportar(
 
     archivos = (
         (NOMBRE_BIB, bibtex_de(incluidos, revision, fecha)),
-        (NOMBRE_INCLUIDOS, incluidos_markdown(incluidos, revision, fecha, limite)),
+        (NOMBRE_INCLUIDOS, incluidos_markdown(incluidos, revision, fecha, limite, estilo)),
+        (NOMBRE_REFERENCIAS, referencias_markdown(incluidos, estilo, revision, fecha)),
         (
             NOMBRE_REVISION,
             revision_manual_markdown(dudosos, revision, fecha, limite),
@@ -654,7 +691,7 @@ def exportar(
     from .notas import escribir_notas  # import local: notas importa descargas
 
     salida.notas = escribir_notas(
-        incluidos, carpeta, revision, _terminos_del_protocolo(resultado)
+        incluidos, carpeta, revision, _terminos_del_protocolo(resultado), estilo
     )
     return salida
 

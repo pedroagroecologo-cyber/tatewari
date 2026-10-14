@@ -275,7 +275,22 @@ def normalizar_obra(obra: Any) -> dict[str, Any]:
     )
     registro["oa_url"] = texto_o_nr(oa_url)
 
+    biblio = obra.get("biblio") if isinstance(obra.get("biblio"), dict) else {}
+    registro["volumen"] = texto_o_nr(biblio.get("volume"))
+    registro["numero"] = texto_o_nr(biblio.get("issue"))
+    registro["paginas"] = _paginas(biblio.get("first_page"), biblio.get("last_page"))
+
     return registro
+
+
+def _paginas(primera: Any, ultima: Any) -> str:
+    """«12–25», o solo «e00326» si es un artículo de número único."""
+    primera, ultima = texto_o_nr(primera), texto_o_nr(ultima)
+    if primera == NR:
+        return NR
+    if ultima == NR or ultima == primera:
+        return primera
+    return f"{primera}–{ultima}"
 
 
 # ---------------------------------------------------------------------------
